@@ -1,0 +1,292 @@
+SevenNet: Scalable EquVariance-Enabled Neural Network
+version 0.10.1, Mon Dec 30 20:03:46 2024
+this file: /home/sr5/sincere.choi/sevenn_workspace/container/v0.10.0/downloads/SevenNet/example_inputs/training/omat24_l3i5_rcut6/log3.sevenn
+reading yaml config...
+                ****
+              ********                                   .
+              *//////,  ..                               .            ,*.
+               ,,***.         ..                        ,          ********.                                  ./,
+             .      .                ..   /////.       .,       . */////////                               /////////.
+        .&@&/        .                  .(((((((..     /           *//////*.  ...                         *((((((((((.
+     @@@@@@@@@@*    @@@@@@@@@@  @@@@@    *((@@@@@     (     %@@@@@@@@@@  .@@@@@@     ..@@@@.   @@@@@@*    .(@@@@@(((*
+    @@@@@.          @@@@         @@@@@ .   @@@@@      #     %@@@@         @@@@@@@@     @@@@(,  @@@@@@@@.    @@@@@(*.
+    %@@@@@@@&       @@@@@@@@@@    @@@@@   @@@@@      #  ., .%@@@@@@@@@    @@@@@@@@@@   @@@@,   @@@@@@@@@@   @@@@@
+    ,(%@@@@@@@@@    @@@@@@@@@@     @@@@@ @@@@&       (//////%@@@@@@@@@    @@@@  @@@@@@ @@@@  . @@@@@  @@@@@.@@@@@
+        .   @@@@@   @@@@ .       .  @@@@@@@@%   . . ( .////,%@@@@         @@@@    @@@@@@@@@    @@@@@    @@@@@@@@@
+    (@@@@@@@@@@@    @@@@@@@@@@**.    @@@@@@*       *.      .%@@@@@@@@@@   @@@@    . @@@@@@@    @@@@@     .@@@@@@@
+     @@@@@@@@@.     @@@@@@@@@@///,    @@@@.      . /        %@@@@@@@@@@   @@@@***,    @@@@@    @@@@@        @@@@@
+           .           //////////*.               /           .            .*******...             . ,.
+          .&&&&&...     ,//////*.       ...////.  /            ,*/.     .   ,////,               .,/////
+          &@@@@@@                         ,(/((, *           ,((((((.                              .***.
+           ,/@(,                            ..   *            ,((((*
+                                                ,
+                                               .
+Distributed training enabled, total world size is 32
+successfully read yaml config!
+
+from model configuration
+chemical_species    : auto
+_number_of_species  : auto
+_type_map           : auto
+irreps_manual       : ['128x0e', '128x0e+64x1e+32x2e+32x3e', '128x0e+64x1e+32x2e+32x3e', '128x0e+64x1e+32x2e+32x3e', \
+                       '128x0e+64x1e+32x2e+32x3e', '128x0e']
+channel             : 128
+lmax                : 3
+lmax_edge           : -1
+lmax_node           : -1
+is_parity           : False
+radial_basis        : {'radial_basis_name': 'bessel', 'bessel_basis_num': 8}
+cutoff_function     : {'cutoff_function_name': 'XPLOR', 'cutoff_on': 5.5}
+act_radial          : silu
+cutoff              : 6.0
+weight_nn_hidden_neurons: [64, 64]
+num_convolution_layer: 5
+act_scalar          : {'e': 'silu', 'o': 'tanh'}
+act_gate            : {'e': 'silu', 'o': 'tanh'}
+conv_denominator    : avg_num_neigh
+train_denominator   : False
+train_shift_scale   : False
+use_bias_in_linear  : False
+readout_as_fcn      : False
+readout_fcn_hidden_neurons: [30, 30]
+readout_fcn_activation: relu
+self_connection_type: linear
+interaction_type    : nequip
+_normalize_sph      : True
+
+from train configuration
+device              : cuda
+random_seed         : 1
+epoch               : 4
+loss                : [['Energy', 'MAE'], ['Force', 'L2MAE'], ['Stress', 'MAE']]
+loss_param          : {}
+optimizer           : adamw
+optim_param         : {'lr': 0.01, 'weight_decay': 0.001}
+scheduler           : onecyclelr
+scheduler_param     : {'max_lr': 0.01, 'epochs': 4, 'pct_start': 0.0025, 'anneal_strategy': 'cos', 'div_factor': 25.0, \
+                       'final_div_factor': 10000.0}
+force_loss_weight   : 1.0
+stress_loss_weight  : 0.01
+per_epoch           : 1
+print_interval_steps: 10000
+epoch_mode          : False
+use_testset         : False
+continue            : {'checkpoint': 'checkpoint_2ep_100000st.pth', 'reset_optimizer': False, 'reset_scheduler': False, \
+                       'reset_epoch': False, 'use_statistic_values_of_checkpoint': True}
+csv_log             : log.csv
+num_workers         : 0
+is_train_stress     : True
+train_shuffle       : True
+error_record        : [['Energy', 'MAE'], ['Energy', 'RMSE'], ['Force', 'MAE'], ['Force', 'RMSE'], ['Force', 'L2MAE'], ['Force', \
+                       'L2RMSE'], ['Stress', 'MAE'], ['Stress', 'RMSE'], ['Energy', 'Loss'], ['Force', 'Loss'], ['Stress', 'Loss'], \
+                       ['TotalLoss', 'None']]
+best_metric         : TotalLoss
+is_ddp              : True
+ddp_backend         : nccl
+local_rank          : 0
+rank                : 0
+world_size          : 32
+
+from data configuration
+load_trainset_path  : ['/home/sr5/zetta/DB/OMat24/dataset/train/aimd-from-PBE-1000-npt', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/train/aimd-from-PBE-1000-nvt', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/train/aimd-from-PBE-3000-npt', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/train/aimd-from-PBE-3000-nvt', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/train/rattled-1000', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/train/rattled-300', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/train/rattled-500', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/train/rattled-relax']
+load_validset_path  : ['/home/sr5/zetta/DB/OMat24/dataset/valid/aimd-from-PBE-1000-npt', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/valid/aimd-from-PBE-1000-nvt', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/valid/aimd-from-PBE-3000-npt', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/valid/aimd-from-PBE-3000-nvt', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/valid/rattled-1000', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/valid/rattled-300', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/valid/rattled-500', \
+                       '/home/sr5/zetta/DB/OMat24/dataset/valid/rattled-relax']
+dtype               : single
+data_format         : ase
+data_format_args    : {'index': ':'}
+save_dataset_path   : False
+save_by_label       : False
+save_by_train_valid : False
+data_divide_ratio   : 0.1
+batch_size          : 16
+preprocess_num_cores: 1
+compute_statistics  : True
+dataset_type        : lmdb
+shift               : per_atom_energy_mean
+scale               : force_rms
+
+Continue found, loading checkpoint
+shift, scale, and conv_denominator are overwritten by model_state_dict of checkpoint
+chemical_species are overwritten by checkpoint. This model knows 89 species
+Checkpoint previous epoch was: 2ep 99999step
+epoch start from 2epoch 99999step
+checkpoint loading successful
+------------------------------------------------------------------------------------------------------------------------
+trainset distribution:
+force_of_atoms      : {'max': '990.982', 'mean': '0.000', 'median': '0.000', 'min': '-991.093', 'std': '4.143'}
+per_atom_energy     : {'max': '99.962', 'mean': '-4.532', 'median': '-4.382', 'min': '-97.412', 'std': '1.929'}
+stress              : {'max': '37.581', 'mean': '-0.012', 'median': '-0.003', 'min': '-57.418', 'std': '0.084'}
+total_energy        : {'max': '4926.600', 'mean': '-77.629', 'median': '-68.220', 'min': '-3893.492', 'std': '97.549'}
+# atoms (node)      : {'Ac': 22004078, 'Ag': 31449954, 'Al': 31765152, 'Ar': 1453, 'As': 25376519, 'Au': 33279289, \
+                       'B': 13843316, 'Ba': 25584269, 'Be': 19876167, 'Bi': 19491932, 'Br': 32392237, 'C': 14196311, \
+                       'Ca': 27051658, 'Cd': 33271804, 'Ce': 6639941, 'Cl': 33500848, 'Co': 15516140, 'Cr': 11166172, \
+                       'Cs': 17846911, 'Cu': 24459280, 'Dy': 21523335, 'Er': 18736169, 'Eu': 950822, 'F': 24949028, \
+                       'Fe': 12579363, 'Ga': 26905151, 'Gd': 961278, 'Ge': 19013507, 'H': 23595793, 'He': 8195, \
+                       'Hf': 14105621, 'Hg': 33865514, 'Ho': 20068731, 'I': 24347185, 'In': 32854416, 'Ir': 20329708, \
+                       'K': 28731604, 'Kr': 1797, 'La': 33412841, 'Li': 34528856, 'Lu': 2693533, 'Mg': 32681172, \
+                       'Mn': 11781904, 'Mo': 12020356, 'N': 24007689, 'Na': 21401096, 'Nb': 8631069, 'Nd': 20760500, \
+                       'Ne': 257, 'Ni': 20372449, 'Np': 2143998, 'O': 69011411, 'Os': 12779039, 'P': 26789174, 'Pa': 5436288, \
+                       'Pb': 25036226, 'Pd': 34101275, 'Pm': 23332081, 'Pr': 21143697, 'Pt': 29706567, 'Pu': 4249953, \
+                       'Rb': 17002959, 'Re': 10319154, 'Rh': 23480082, 'Ru': 15487108, 'S': 36960214, 'Sb': 26974579, \
+                       'Sc': 21461932, 'Se': 42744000, 'Si': 25260756, 'Sm': 17968852, 'Sn': 21064223, 'Sr': 13400734, \
+                       'Ta': 9816048, 'Tb': 13705230, 'Tc': 11917911, 'Te': 35728424, 'Th': 8202837, 'Ti': 8244950, \
+                       'Tl': 28045940, 'Tm': 15860188, 'U': 2113340, 'V': 6794743, 'W': 11424849, 'Xe': 3463, 'Y': 20043805, \
+                       'Yb': 118121, 'Zn': 26182739, 'Zr': 12843442, 'total': 1721432702}
+# structures (graph): 89505421
+------------------------------------------------------------------------------------------------------------------------
+validset distribution:
+force_of_atoms      : {'max': '910.040', 'mean': '0.000', 'median': '-0.000', 'min': '-909.655', 'std': '4.355'}
+per_atom_energy     : {'max': '89.895', 'mean': '-4.521', 'median': '-4.371', 'min': '-12.908', 'std': '1.922'}
+stress              : {'max': '8.738', 'mean': '-0.012', 'median': '-0.003', 'min': '-18.522', 'std': '0.080'}
+total_energy        : {'max': '1078.746', 'mean': '-77.357', 'median': '-67.996', 'min': '-1284.343', 'std': '97.297'}
+# atoms (node)      : {'Ac': 234705, 'Ag': 344425, 'Al': 344424, 'As': 271315, 'Au': 358025, 'B': 152638, 'Ba': 277565, \
+                       'Be': 212521, 'Bi': 211216, 'Br': 340831, 'C': 156121, 'Ca': 292848, 'Cd': 356448, 'Ce': 72349, \
+                       'Cl': 350481, 'Co': 170700, 'Cr': 115785, 'Cs': 192215, 'Cu': 261637, 'Dy': 224522, 'Er': 199827, \
+                       'Eu': 10638, 'F': 262741, 'Fe': 131010, 'Ga': 290535, 'Gd': 10747, 'Ge': 211546, 'H': 264673, \
+                       'Hf': 151220, 'Hg': 367240, 'Ho': 219244, 'I': 254982, 'In': 352649, 'Ir': 213211, 'K': 305321, 'Kr': 56, \
+                       'La': 355197, 'Li': 375242, 'Lu': 29891, 'Mg': 344175, 'Mn': 126731, 'Mo': 124595, 'N': 251679, \
+                       'Na': 224081, 'Nb': 92976, 'Nd': 223109, 'Ni': 217668, 'Np': 23379, 'O': 740041, 'Os': 134008, \
+                       'P': 286371, 'Pa': 58579, 'Pb': 268925, 'Pd': 356341, 'Pm': 259211, 'Pr': 222035, 'Pt': 314097, \
+                       'Pu': 43326, 'Rb': 177877, 'Re': 110095, 'Rh': 257716, 'Ru': 167441, 'S': 402818, 'Sb': 290501, \
+                       'Sc': 227335, 'Se': 450845, 'Si': 271006, 'Sm': 195538, 'Sn': 224618, 'Sr': 142900, 'Ta': 106802, \
+                       'Tb': 140575, 'Tc': 133436, 'Te': 385404, 'Th': 87076, 'Ti': 89094, 'Tl': 304998, 'Tm': 175686, \
+                       'U': 22889, 'V': 71042, 'W': 122644, 'Y': 215481, 'Yb': 1328, 'Zn': 279000, 'Zr': 141103, \
+                       'total': 18453334, 'Xe': 12, 'Ar': 6}
+# structures (graph): 955135
+------------------------------------------------------------------------------------------------------------------------
+
+Model building...
+Irreps of features
+edge_feature        : 1x0e+1x1e+1x2e+1x3e
+0th node            : 128x0e
+1th node            : 128x0e+64x1e+32x2e+32x3e
+2th node            : 128x0e+64x1e+32x2e+32x3e
+3th node            : 128x0e+64x1e+32x2e+32x3e
+4th node            : 128x0e+64x1e+32x2e+32x3e
+readout irreps      : 128x0e
+# learnable parameters: 1171144
+
+------------------------------------------------------------------------------------------------------------------------
+Epoch 0/4 lr: 0.000000
+          Energy_MAE (eV/atom)   Energy_RMSE (eV/atom)   Force_MAE (eV/Å)   Force_RMSE (eV/Å)   Force_L2MAE (eV/Å)   Force_L2RMSE (eV/Å)   Stress_MAE (eV/Å3)   Stress_RMSE (eV/Å3)   Energy_Loss   Force_Loss   Stress_Loss   TotalLoss  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+trainset              1.498335                1.931068           0.880448            4.484847             1.767387              4.484847             0.016923              0.162120      1.498335     1.792441      0.016923    3.290945
+validset              1.494711                1.924227           0.886670            4.509398             1.779784              4.509398             0.017078              0.157103      1.494754     1.752828      0.017075    3.247752
+------------------------------------------------------------------------------------------------------------------------
+Epoch 1/4  lr: 0.000400
+------------------------------------------------------------------------------------------------------------------------
+[10000 / 174816] LR: 0.00999663	Energy: 0.14040074	Force: 0.50193660	Stress: 13.97915587
+[20000 / 174816] LR: 0.00998350	Energy: 0.07119369	Force: 0.34462959	Stress: 10.48092353
+[30000 / 174816] LR: 0.00996048	Energy: 0.05565992	Force: 0.27865708	Stress: 8.86530153
+[40000 / 174816] LR: 0.00992760	Energy: 0.04366375	Force: 0.23976920	Stress: 7.95815200
+[50000 / 174816] LR: 0.00988494	Energy: 0.04559949	Force: 0.24827709	Stress: 8.56542743
+[60000 / 174816] LR: 0.00983258	Energy: 0.03807984	Force: 0.22196322	Stress: 7.77093730
+[70000 / 174816] LR: 0.00977062	Energy: 0.03823073	Force: 0.22230694	Stress: 7.60085869
+[80000 / 174816] LR: 0.00969919	Energy: 0.03435706	Force: 0.20683670	Stress: 7.33060826
+[90000 / 174816] LR: 0.00961843	Energy: 0.03681702	Force: 0.21551803	Stress: 7.50490617
+[100000 / 174816] LR: 0.00952850	Energy: 0.03172342	Force: 0.19865365	Stress: 6.96667659
+[110000 / 174816] LR: 0.00942958	Energy: 0.02965295	Force: 0.19291378	Stress: 7.04925971
+[120000 / 174816] LR: 0.00932187	Energy: 0.02917102	Force: 0.18980189	Stress: 6.83297014
+[130000 / 174816] LR: 0.00920557	Energy: 0.03665391	Force: 0.22107967	Stress: 7.79755404
+[140000 / 174816] LR: 0.00908092	Energy: 0.02973457	Force: 0.19306537	Stress: 6.72063020
+[150000 / 174816] LR: 0.00894816	Energy: 0.03020732	Force: 0.18645727	Stress: 7.13012167
+[160000 / 174816] LR: 0.00880757	Energy: 0.02767697	Force: 0.18280293	Stress: 6.65439708
+[170000 / 174816] LR: 0.00865942	Energy: 0.02661254	Force: 0.18159879	Stress: 6.67028706
+          Energy_MAE (eV/atom)   Energy_RMSE (eV/atom)   Force_MAE (eV/Å)   Force_RMSE (eV/Å)   Force_L2MAE (eV/Å)   Force_L2RMSE (eV/Å)   Stress_MAE (eV/Å3)   Stress_RMSE (eV/Å3)   Energy_Loss   Force_Loss   Stress_Loss   TotalLoss  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+trainset              0.044925                9.473598           0.120035           99.956812             0.242179             99.956812             0.008088             92.980215      0.044925     0.243630      0.008088    0.288636
+validset              0.025281                0.259696           0.094138            0.635679             0.189958              0.635679             0.004267              0.120532      0.025281     0.185484      0.004267    0.210808
+Best checkpoint written
+Epoch 1 elapsed: 1 day, 10:21:33.13
+------------------------------------------------------------------------------------------------------------------------
+Epoch 2/4  lr: 0.008585
+------------------------------------------------------------------------------------------------------------------------
+[10000 / 174816] LR: 0.00842665	Energy: 0.02709803	Force: 0.18438832	Stress: 6.84422048
+[20000 / 174816] LR: 0.00826104	Energy: 0.03137676	Force: 0.20393169	Stress: 7.47491559
+[30000 / 174816] LR: 0.00808895	Energy: 0.04055392	Force: 0.24545640	Stress: 8.01241674
+[40000 / 174816] LR: 0.00791073	Energy: 0.02976434	Force: 0.19460903	Stress: 6.87487629
+[50000 / 174816] LR: 0.00772673	Energy: 0.02989191	Force: 0.19303782	Stress: 6.99081546
+[60000 / 174816] LR: 0.00753731	Energy: 0.02710470	Force: 0.18149554	Stress: 6.85749103
+[70000 / 174816] LR: 0.00734286	Energy: 0.02595682	Force: 0.17751258	Stress: 6.49390127
+[80000 / 174816] LR: 0.00714375	Energy: 0.02548742	Force: 0.17481497	Stress: 6.56659410
+[90000 / 174816] LR: 0.00694039	Energy: 0.02553043	Force: 0.17618933	Stress: 6.53222043
+[100000 / 174816] LR: 0.00673318	Energy: 0.02397395	Force: 0.17241602	Stress: 6.26512944
+[110000 / 174816] LR: 0.00652250	Energy: 0.02631728	Force: 0.18578662	Stress: 6.91447194
+[120000 / 174816] LR: 0.00630882	Energy: 0.02577673	Force: 0.18221922	Stress: 6.64846177
+[130000 / 174816] LR: 0.00609254	Energy: 0.02613360	Force: 0.17849980	Stress: 6.73751620
+[140000 / 174816] LR: 0.00587409	Energy: 0.02329981	Force: 0.17129478	Stress: 6.16104092
+[150000 / 174816] LR: 0.00565391	Energy: 0.02470761	Force: 0.16964043	Stress: 6.59676040
+[160000 / 174816] LR: 0.00543243	Energy: 0.02290757	Force: 0.16729124	Stress: 6.25559834
+[170000 / 174816] LR: 0.00521009	Energy: 0.02209598	Force: 0.16758298	Stress: 6.29481113
+          Energy_MAE (eV/atom)   Energy_RMSE (eV/atom)   Force_MAE (eV/Å)   Force_RMSE (eV/Å)   Force_L2MAE (eV/Å)   Force_L2RMSE (eV/Å)   Stress_MAE (eV/Å3)   Stress_RMSE (eV/Å3)   Energy_Loss   Force_Loss   Stress_Loss   TotalLoss  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+trainset              0.024615                0.281059           0.086359            0.968088             0.174244              0.968088             0.004088              0.433874      0.024615     0.174500      0.004088    0.199156
+validset              0.026985                0.256653           0.083925            0.554905             0.169273              0.554905             0.003989              0.119459      0.026985     0.164091      0.003989    0.191116
+Best checkpoint written
+Epoch 2 elapsed: 21:22:41.51
+------------------------------------------------------------------------------------------------------------------------
+Epoch 3/4  lr: 0.005103
+------------------------------------------------------------------------------------------------------------------------
+[10000 / 174816] LR: 0.00488003	Energy: 0.02206422	Force: 0.16973876	Stress: 6.66778545
+[20000 / 174816] LR: 0.00465747	Energy: 0.02850635	Force: 0.19139799	Stress: 7.97860520
+[30000 / 174816] LR: 0.00443559	Energy: 0.02366726	Force: 0.17619192	Stress: 6.35117271
+[40000 / 174816] LR: 0.00421482	Energy: 0.02192097	Force: 0.16628992	Stress: 6.19064383
+[50000 / 174816] LR: 0.00399562	Energy: 0.02450005	Force: 0.18298540	Stress: 6.68375676
+[60000 / 174816] LR: 0.00377841	Energy: 0.02154221	Force: 0.16427424	Stress: 6.33506262
+[70000 / 174816] LR: 0.00356363	Energy: 0.02097084	Force: 0.16367454	Stress: 6.10198966
+[80000 / 174816] LR: 0.00335170	Energy: 0.02106353	Force: 0.16176500	Stress: 6.22093085
+[90000 / 174816] LR: 0.00314304	Energy: 0.02110824	Force: 0.16265861	Stress: 6.17469326
+[100000 / 174816] LR: 0.00293807	Energy: 0.01978056	Force: 0.16108153	Stress: 5.96323196
+[110000 / 174816] LR: 0.00273720	Energy: 0.01925411	Force: 0.15990985	Stress: 6.19050944
+[120000 / 174816] LR: 0.00254082	Energy: 0.01921438	Force: 0.15830230	Stress: 6.02784775
+[130000 / 174816] LR: 0.00234932	Energy: 0.02019988	Force: 0.15951870	Stress: 6.26140857
+[140000 / 174816] LR: 0.00216308	Energy: 0.01847940	Force: 0.15796067	Stress: 5.80688126
+[150000 / 174816] LR: 0.00198248	Energy: 0.02024406	Force: 0.15763491	Stress: 6.23850219
+[160000 / 174816] LR: 0.00180787	Energy: 0.01873590	Force: 0.15618225	Stress: 5.95860928
+[170000 / 174816] LR: 0.00163958	Energy: 0.01820453	Force: 0.15677551	Stress: 6.00582864
+          Energy_MAE (eV/atom)   Energy_RMSE (eV/atom)   Force_MAE (eV/Å)   Force_RMSE (eV/Å)   Force_L2MAE (eV/Å)   Force_L2RMSE (eV/Å)   Stress_MAE (eV/Å3)   Stress_RMSE (eV/Å3)   Energy_Loss   Force_Loss   Stress_Loss   TotalLoss  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+trainset              0.018583                0.261318           0.077403            0.533877             0.156097              0.533877             0.003766              0.255133      0.018582     0.156256      0.003766    0.174876
+validset              0.017735                0.254445           0.078261            0.495710             0.157811              0.495710             0.003782              0.119130      0.017735     0.152064      0.003782    0.169837
+Best checkpoint written
+Epoch 3 elapsed: 12:19:44.84
+------------------------------------------------------------------------------------------------------------------------
+Epoch 4/4  lr: 0.001561
+------------------------------------------------------------------------------------------------------------------------
+[10000 / 174816] LR: 0.00140263	Energy: 0.01771051	Force: 0.15665913	Stress: 6.12142282
+[20000 / 174816] LR: 0.00125150	Energy: 0.01822790	Force: 0.15536409	Stress: 6.06729720
+[30000 / 174816] LR: 0.00110781	Energy: 0.01750558	Force: 0.15624270	Stress: 5.82108839
+[40000 / 174816] LR: 0.00097186	Energy: 0.01746061	Force: 0.15473062	Stress: 5.87771075
+[50000 / 174816] LR: 0.00084390	Energy: 0.01833890	Force: 0.16061042	Stress: 6.13655849
+[60000 / 174816] LR: 0.00072419	Energy: 0.01739860	Force: 0.15489813	Stress: 6.11681494
+[70000 / 174816] LR: 0.00061298	Energy: 0.01711459	Force: 0.15380268	Stress: 5.84047767
+[80000 / 174816] LR: 0.00051047	Energy: 0.01743338	Force: 0.15307800	Stress: 5.98437332
+[90000 / 174816] LR: 0.00041689	Energy: 0.01762266	Force: 0.15393827	Stress: 5.93975886
+[100000 / 174816] LR: 0.00033240	Energy: 0.01653755	Force: 0.15319923	Stress: 5.72726075
+[110000 / 174816] LR: 0.00025718	Energy: 0.01611252	Force: 0.15228917	Stress: 5.97441968
+[120000 / 174816] LR: 0.00019137	Energy: 0.01624731	Force: 0.15151675	Stress: 5.83495097
+[130000 / 174816] LR: 0.00013512	Energy: 0.01738026	Force: 0.15292102	Stress: 6.07282083
+[140000 / 174816] LR: 0.00008852	Energy: 0.01577144	Force: 0.15196397	Stress: 5.63319165
+[150000 / 174816] LR: 0.00005168	Energy: 0.01770231	Force: 0.15213555	Stress: 6.10650956
+[160000 / 174816] LR: 0.00002466	Energy: 0.01632528	Force: 0.15124482	Stress: 5.80818891
+[170000 / 174816] LR: 0.00000752	Energy: 0.01583915	Force: 0.15226836	Stress: 0.00369421
+          Energy_MAE (eV/atom)   Energy_RMSE (eV/atom)   Force_MAE (eV/Å)   Force_RMSE (eV/Å)   Force_L2MAE (eV/Å)   Force_L2RMSE (eV/Å)   Stress_MAE (eV/Å3)   Stress_RMSE (eV/Å3)   Energy_Loss   Force_Loss   Stress_Loss   TotalLoss  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+trainset              0.016268                0.260040           0.075081            0.458214             0.151401              0.458214             0.003685              0.123770      0.016268     0.151559      0.003685    0.167863
+validset              0.016384                0.253907           0.075968            0.485495             0.153169              0.485495             0.003745              0.119079      0.016384     0.147164      0.003744    0.163586
+Best checkpoint written
+Epoch 4 elapsed: 12:24:30.12
+Total wall time: 1 day, 5:02:57.78

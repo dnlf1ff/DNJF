@@ -1,0 +1,2 @@
+num_atoms,user_label,total_energy,inferred_total_energy,stress_xx,stress_yy,stress_zz,stress_xy,stress_yz,stress_zx,inferred_stress_xx,inferred_stress_yy,inferred_stress_zz,inferred_stress_xy,inferred_stress_yz,inferred_stress_zx,cell_lattice_vectors_a,cell_lattice_vectors_b,cell_lattice_vectors_c
+144,-,0,-1088.2482,-0.0,-0.0,-0.0,-0.0,-0.0,-0.0,59.405296,34.40969,87.24385,2.2573657,4.3590293,2.4993055,[19.833273  0.        0.      ],[-4.958318  8.588059  0.      ],[ 0.        0.       10.912215]

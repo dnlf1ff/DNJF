@@ -1,0 +1,95 @@
+model:
+    chemical_species: 'univ'
+    cutoff: 6.0
+    channel: 128
+    is_parity: True
+    lmax: 3
+    num_convolution_layer: 3
+    irreps_manual:
+        - "128x0e"
+        - "128x0e+64x1o+32x2e+32x3o"
+        - "128x0e+64x1o+32x2e+32x3o"
+        - "128x0e"
+
+    weight_nn_hidden_neurons: [64, 64]
+    radial_basis:
+        radial_basis_name: 'bessel'
+        bessel_basis_num: 8
+    cutoff_function:
+        cutoff_function_name: 'XPLOR'
+        cutoff_on: 5.5
+
+    act_gate: {'e': 'silu', 'o': 'tanh'}
+    act_scalar: {'e': 'silu', 'o': 'tanh'}
+
+    conv_denominator: 28.84848403930664
+    train_shift_scale: False
+    train_denominator: False
+    self_connection_type: 'linear'
+        
+train:
+    train_shuffle: True
+    random_seed: 777
+    is_train_stress : True
+    epoch: 4
+
+    loss: 'Huber'
+    loss_param:
+        delta: 0.01
+
+    optimizer: 'adamw'
+    optim_param:
+        lr: 0.01
+        weight_decay: 0.001
+    scheduler: 'onecyclelr'
+    scheduler_param:
+        max_lr: 0.01
+        epochs: 4
+        pct_start: 0.0025
+        anneal_strategy: 'cos'
+        div_factor: 25.0
+        final_div_factor: 10000.0
+
+    force_loss_weight : 1.00
+    stress_loss_weight: 0.01
+
+    error_record:
+        - ['Energy', 'MAE']
+        - ['Force', 'MAE']
+        - ['Stress', 'MAE']
+        - ['Energy', 'Loss']
+        - ['Force', 'Loss']
+        - ['Stress', 'Loss']
+        - ['TotalLoss', 'None']
+    num_workers: 4
+    per_epoch: 0.01
+    train_by_batch: True
+
+    continue:
+        checkpoint: './checkpoint_1_22.pth'
+        reset_optimizer: False
+        reset_scheduler: False
+        reset_data_progress: False
+
+data:
+    batch_size: 64  # per GPU batch size, as the model trained with 32 GPUs, the effective batch size equals 4096.
+    shift: -4.532467842102051
+    scale: 4.142819881439209
+    
+    dataset_type: 'aselmdb'
+    save_by_train_valid: False
+    save_by_label: False
+    #load_trainset_path: '/user/hansw/Dataset/graphs/MPF/sevenn_data/MPF_train_6.pt'
+    #load_validset_path: '/user/hansw/Dataset/graphs/MPF/sevenn_data/MPF_valid_6.pt'
+    #load_testset_path: '/user/hansw/Dataset/graphs/MPF/sevenn_data/MPF_test_6.pt'
+
+    load_trainset_path: ['/home/snu/Dataset/from_OMat24/train/aimd-from-PBE-1000-nvt', '/home/snu/Dataset/from_OMat24/train/aimd-from-PBE-1000-npt', '/home/snu/Dataset/from_OMat24/train/aimd-from-PBE-3000-nvt', '/home/snu/Dataset/from_OMat24/train/aimd-from-PBE-3000-npt', '/home/snu/Dataset/from_OMat24/train/rattled-1000', '/home/snu/Dataset/from_OMat24/train/rattled-1000-subsampled', '/home/snu/Dataset/from_OMat24/train/rattled-500', '/home/snu/Dataset/from_OMat24/train/rattled-500-subsampled', '/home/snu/Dataset/from_OMat24/train/rattled-300', '/home/snu/Dataset/from_OMat24/train/rattled-300-subsampled', '/home/snu/Dataset/from_OMat24/train/rattled-relax', '/home/snu/Dataset/from_OMat24/val/aimd-from-PBE-1000-nvt', '/home/snu/Dataset/from_OMat24/val/aimd-from-PBE-1000-npt', '/home/snu/Dataset/from_OMat24/val/aimd-from-PBE-3000-nvt', '/home/snu/Dataset/from_OMat24/val/aimd-from-PBE-3000-npt', '/home/snu/Dataset/from_OMat24/val/rattled-1000', '/home/snu/Dataset/from_OMat24/val/rattled-1000-subsampled', '/home/snu/Dataset/from_OMat24/val/rattled-500', '/home/snu/Dataset/from_OMat24/val/rattled-500-subsampled', '/home/snu/Dataset/from_OMat24/val/rattled-300', '/home/snu/Dataset/from_OMat24/val/rattled-300-subsampled', '/home/snu/Dataset/from_OMat24/val/rattled-relax']  
+    load_validset_path: ['/home/snu/Dataset/from_OMat24/val/aimd-from-PBE-1000-nvt', '/home/snu/Dataset/from_OMat24/val/aimd-from-PBE-1000-npt', '/home/snu/Dataset/from_OMat24/val/aimd-from-PBE-3000-nvt', '/home/snu/Dataset/from_OMat24/val/aimd-from-PBE-3000-npt', '/home/snu/Dataset/from_OMat24/val/rattled-1000', '/home/snu/Dataset/from_OMat24/val/rattled-1000-subsampled', '/home/snu/Dataset/from_OMat24/val/rattled-500', '/home/snu/Dataset/from_OMat24/val/rattled-500-subsampled', '/home/snu/Dataset/from_OMat24/val/rattled-300', '/home/snu/Dataset/from_OMat24/val/rattled-300-subsampled', '/home/snu/Dataset/from_OMat24/val/rattled-relax']
+
+    load_trainset_sequence:
+        total_sequence_path: 'train_seq.npy'
+        stat_sequence_info: 'train_stat.npy'
+
+    load_validset_sequence:
+        total_sequence_path: 'valid_seq.npy'
+        stat_sequence_info: 'valid_stat.npy'

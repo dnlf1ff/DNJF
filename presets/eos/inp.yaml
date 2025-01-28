@@ -1,0 +1,159 @@
+Al:
+    mp_id: ['mp-134','mp-2647008','mp-998860'] 
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0,16.6,0.8,5]
+Ag:
+    mp_id: ['mp-124','mp-10597','mp-2646971'] 
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 18, 1.8, 5]
+Au:
+    mp_id: ['mp-81','mp-1008634','mp-2647062']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 18, 2, 5]
+
+Ca:
+    mp_id: ['mp-45','mp-132','mp-21']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 42, 0.2, 5]
+Co:
+    mp_id: ['mp-102','mp-54','mp-2647057']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 10, 1,8]
+
+Cd:
+    mp_id: ['mp-1096861','mp-94','mp-2647135']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess:  [0, 21, 1, 5]
+   
+Cr:
+    mp_id: ['mp-8633','mp-89','mp-90','mp-17']
+    bravais: ['fcc','hcp','bcc','p']
+    initial_guess:  [0, 13, 1, 5]
+
+Cu:
+    mp_id: ['mp-30','mp-989782','mp-998890']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0,11, 1.1, 5]
+Cs:
+    mp_id: ['mp-1055940','mp-11832','mp-1']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 116,82, 5]
+
+Li:
+    mp_id: ['mp-51','mp-10173','mp-135']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess:  [0, 20, 1, 5]
+
+K:
+    mp_id: ['mp-10157','mp-1184755','mp-58']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess:  [0, 78, 1, 5]
+
+Na:
+    mp_id: ['mp-974558','mp-10172','mp-127']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 36, 57.14, 5]
+
+Fe:
+    mp_id: ['mp-150','mp-136','mp-13']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess:  [0, 12, 1, 5]
+
+Pt:
+    mp_id: ['mp-126','mp-2647022','mp-2646979']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 15,1,5]
+
+Pd:
+    mp_id: ['mp-2','mp-2646997','mp-2646977']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess:  [0, 15, 1, 5]
+      
+
+Ni:
+    mp_id: ['mp-23','mp-10257','mp-1008728']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 10, 1.3, 5]
+
+Mg:
+    mp_id: ['mp-1056702','mp-153','mp-110']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 23, 0.3,5]
+Mo:
+    mp_id: ['mp-8637','mp-2647013','mp-129']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 16, 1.5, 5]
+Sr:
+    mp_id: ['mp-76','mp-139','mp-95']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 55, 0.08, 5]
+
+V:
+    mp_id: ['mp-8632','mp-2647074','mp-146']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess:  [0, 13, 1, 5]
+
+W:
+    mp_id: ['mp-8641','mp-2646990','mp-91']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 16, 1.8, 2]
+Zn:
+    mp_id: ['mp-2646972','mp-79','mp-2647117']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 15.5, 0.4, 5]
+
+Hf:
+    mp_id: ['mp-8640','mp-103','mp-100']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 22, 0.7, 5]
+
+Rb:
+    mp_id: ['mp-12628','mp-975129','mp-70']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 90, 0.0125, 5]
+
+Rh:
+    mp_id: ['mp-74','mp-2646993','mp-2647000']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 14, 1.5, 5]
+Y:
+    mp_id: ['mp-9','mp-112']
+    bravais: ['fcc','hcp']
+    initial_guess: [0, 32, 0.25, 5]
+
+
+Ta:
+    mp_id: ['mp-6986','mp-2647044','mp-50']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 18.8, 1.2, 5]
+
+
+Ti:
+    mp_id: ['mp-6985','mp-46','mp-73']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 17.4, 0.8, 5]
+
+Nb:
+    mp_id: ['mp-8636','mp-2647103','mp-75']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 19.4, 1.1, 5]
+
+Zr:
+    mp_id: ['mp-8635','mp-131','mp-41']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 23, 0.7, 5]
+
+Ir:
+    mp_id: ['mp-101','mp-2647032','mp-2647047']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 14, 2.2, 5]
+
+Os:
+    mp_id: ['mp-8643','mp-49','mp-2647031']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 14, 2.3, 5]
+
+Re:
+    mp_id: ['mp-8642','mp-8','mp-2647037']
+    bravais: ['fcc','hcp','bcc']
+    initial_guess: [0, 15, 2.3, 5]
