@@ -13,33 +13,33 @@ import sys
 from util import *
 from shell import *
 
-def get_system_df(df, system=None, mp_id=None):
+def get_system_out(out, system=None, mp_id=None):
     try:
-        mask = df['formula_pretty'].apply(lambda x: system in x)
+        mask = out['formula_pretty'].apply(lambda x: system in x)
     except:
         if mp_id is None:
-            mask = df['system'].apply(lambda x: system in x)
+            mask = out['system'].apply(lambda x: system in x)
         else:
-            mask = df['mp_id'].apply(lambda x: x == mp_id)
-    return df[mask]
+            mask = out['mp_id'].apply(lambda x: x == mp_id)
+    return out[mask]
 
-def write_output(system, inp, return_df=False):
+def write_output(system, inp, return_out=False):
     path = os.path.join(os.environ['JAR'], f'{system}0.pkl')
-    df = pd.DataFrame()
-    df['mp_id'] = inp[system]['mp_id']
-    df['bravais'] = inp[system]['bravais']
-    save_dict(data=df, path=path)
-    if return_df:
-        return df
+    out = pd.DataFrame()
+    out['mp_id'] = inp[system]['mp_id']
+    out['bravais'] = inp[system]['bravais']
+    save_dict(data=out, path=path)
+    if return_out:
+        return out
     return
 
-def write_inputs(system, df=None, check_potpaw=True,logger=logger):
-    if df is None:
-        df = load_dict(system)
+def write_inputs(system, out=None, check_potpaw=True,logger=logger):
+    if out is None:
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
     mpr=MPRester(api_key=os.environ['API_KEY'],use_document_model=False)
     _path = make_dir(os.path.join(os.environ['DFT'], system.lower()), return_path=True)
     shutil.copy(os.path.join(os.environ['PBE'],system.lower(),'POTCAR'), os.path.join(_path,'POTCAR'))
-    for row in df.iterrows():
+    for row in out.iterrows():
         row=row[1]
         mp_id=row['mp_id']
         task = mpr.materials.tasks.search([mp_id])[0]
@@ -61,10 +61,10 @@ def write_inputs(system, df=None, check_potpaw=True,logger=logger):
             logger.log("INFO",f"{potcar_spec}")
 
 
-def run_relax(system, partition, df=None):
-    if df is None:
-        df = load_dict(system)
-    for row in df.iterrows():
+def run_relax(system, partition, out=None):
+    if out is None:
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
+    for row in out.iterrows():
         row = row[1]
         path = os.path.join(os.environ['DFT'], system.lower(), row['bravais'])
         shutil.copy(os.path.join(os.environ['PBE'],system.lower(),'POTCAR'), os.path.join(path,'POTCAR'))
@@ -119,10 +119,10 @@ def strain_vol(system, system_path, x=0.157, num_points=15):
             subprocess.run(['chmod','-w','POTCAR'], cwd=strain_path)
             subprocess.run(['chmod','+x','POTCAR'], cwd=strain_path)
 
-def run_eos(system, logger=logger):
-    df = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl')) 
-    for row in df.iterrows():
-        row = row[1]
+def run_eos(system,out=None,logger=logger):
+    if out is None:
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl')) 
+    for i, row in out.iterrows():
         system_strain_path = make_dir(os.path.join(os.environ['DFT'], system.lower(), row['bravais'],'strain'), return_path=True)
         subprocess.run(['rm', 'run-eos.sh'], cwd=system_strain_path)
         job = os.path.join(os.environ ['DNJF'], 'jobs','run-eos.sh')
@@ -132,14 +132,14 @@ def run_eos(system, logger=logger):
         subprocess.run(['sbatch', 'run-eos.sh'], cwd=system_strain_path)
 
 
-def get_vasp_results(system, df=None, return_df=False):
-    if df is None:
-        df = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
+def get_vasp_results(system, out=None, return_out=False):
+    if out is None:
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
     volume_factors = np.linspace(0,15,15)
     vols_dft = []
     pes_dft = []
         
-    for row in df.iterrows():
+    for row in out.iterrows():
         row=row[1]
         path = os.path.join(os.environ['DFT'], system.lower(), row['bravais'],'strain')
         vols = []
@@ -158,11 +158,11 @@ def get_vasp_results(system, df=None, return_df=False):
             logger.log("INFO",f"appended pes: {pes}")
         vols_dft.append(np.asarray(vols, dtype=np.float64))
         pes_dft.append(np.asarray(pes, dtype=np.float64))
-    df['pe-dft'] = pes_dft
-    df['vol-dft'] = vols_dft
-    save_dict(df, path=os.path.join(os.environ['JAR'],f'{system}0.pkl'))
-    if return_df:
-        return df
+    out['pe-dft'] = pes_dft
+    out['vol-dft'] = vols_dft
+    save_dict(out, path=os.path.join(os.environ['JAR'],f'{system}0.pkl'))
+    if return_out:
+        return out
     return
 
 if __name__ == '__main__':

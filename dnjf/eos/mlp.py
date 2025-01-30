@@ -4,7 +4,7 @@ from ase.io import read, write
 from ase.optimize import FIRE 
 from ase.constraints import UnitCellFilter
 
-from sevenn.sevennet_calculator import SevenNetCalculator
+# from sevenn.sevennet_calculator import SevenNetCalculator
 # from mace.calculators import mace_mp
 # from mattersim.forcefield import MatterSimCalculator
 import copy
@@ -21,12 +21,15 @@ from tqdm import tqdm
 def set_mlp(atoms, mlp, device, return_mlp=False,logger=logger):
     logger.log("DEBUG", "set mlp function")
     if 'mace' in mlp.lower():
+        from mace.calculators import mace_mp
         calculator = mace_mp(model='medium', dispersion = False, default_dtype = 'float64', device='cpu')
         logger.debug(f"MLP = {mlp}")
     elif 'matsim' in mlp.lower() or 'matter' in mlp.lower():
+        from mattersim.forcefield import MatterSimCalculator
         calculator = MatterSimCalculator(device=device)
         logger.debug(f"MLP = {mlp}")
     else:
+        from sevenn.sevennet_calculator import SevenNetCalculator
         mlp_path = os.path.join(os.environ['MLP'],mlp,'checkpoint_best.pth')
         logger.debug(f"MLP = {mlp_path}")
         calculator = SevenNetCalculator(model= mlp_path, device=device)
