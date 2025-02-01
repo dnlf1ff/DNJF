@@ -96,6 +96,46 @@ python {script_2} {argv_}
     return
 
 
+def job_with_node(system, task, script, argv_,  partition, nodelist, output_file=None, return_path=False, run=False):
+    if output_file is None:
+        output_file = f'{system}.out.x'
+    script = os.path.join(os.environ['DNJF'],'dnjf',task,script) 
+    ntasks=get_ntasks(partition)
+    
+    sbatch_content = f"""#!/bin/bash
+#SBATCH --job-name={system}
+#SBATCH --output=calc.%j.x
+#SBATCH --error=calc.%j.x
+#SBATCH --time=4:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks={ntasks}
+#SBATCH --partition={partition}
+#SBATCH --nodelist={nodelist}
+echo "SLRUM_NTASKS: $SLURM_NTASKS"
+if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
+    echo "Error: SLRUM_NTASKS is not set or less than or equal to 0"
+    exit 1
+fi
+
+python {script} {argv_}
+"""
+    path = os.environ['RUN']
+    job = f"{system.lower()}.sh"
+
+    with open(os.path.join(path, job), "w") as sbatch_file:
+        sbatch_file.write(sbatch_content)
+    print(f"SBATCH file {job} created successfully!")
+    
+    if run:
+        os.chdir(path)
+        subprocess.run(['sbatch',job])
+
+    if return_path:
+        return path
+    return
+
+
+
 def python_job(system, task, script, argv_,  partition, output_file=None, return_path=False, run=False):
     if output_file is None:
         output_file = f'{system}.out.x'
