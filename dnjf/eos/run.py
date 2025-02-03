@@ -24,17 +24,17 @@ def post_vasp(systems, pbe): # natvie python or create job
     set_env(task='eos',pbe=pbe)
     for system in systems:
         # job_with_node(system=system, task='eos', script='vasp.py',argv_=system, partition='gpul',nodelist='n137',run = True)
-        python_job(system=system,task='eos',script='mlp.py',argv_=system, partition='loki1',run=True)
+        job_with_node(system=system,task='eos',script='mlp.py',argv_=system, partition='gpul',nodelist='n138',run=True)
 
 def run_fit(systems, pbe):
     set_env(task='eos', pbe=pbe)
     for system in systems:
-        python_job(system=system,task='eos',script='fit.py',argv_=system,  partition='loki1', run=True)
+        job_with_node(system=system,task='eos',script='fit.py',argv_=system,  partition='gpul', nodelist='n138',run=True)
 
 
 
 if __name__ == '__main__':
     systems = ['Au','Ag','Al','Ca','Co','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Ni','Os','Pd','Pt','Re','Rb','Rh','Sr','Ti','Ta','V','W','Zn','Zr','Cs'] #Y, Cd
     pbe = sys.argv[1]
-    post_vasp(systems, pbe)
-    # run_fit(systems, pbe)
+    # post_vasp(systems, pbe)
+    run_fit(systems, pbe)

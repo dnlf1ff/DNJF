@@ -65,7 +65,7 @@ def fit_system(system, mlps, conf=None, df= None, return_df = False, save_df=Tru
     bravais_s = df['bravais'].to_list() 
     tag=f'{bravais_s[0]}{bravais_s[1]}'
     if conf is None:
-        conf = load_conf(os.path.join(os.environ['CONF'], 'eos','inp.yaml'))
+        conf = load_conf()
     if df is None:
         df = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     for mlp in mlps:

@@ -58,43 +58,58 @@ def run_mlp(system, atoms, mlp, device, isif=3, return_results = True,logger=log
     return
 
 
-def strain_vol(system, atoms, mlp, device, x=0.157, num_points=15,logger=logger):
+def strain_vol(row, mlp, device, x=0.157, num_points=15,logger=logger):
     logger.log("DEBUG", "strain_vol FUNC")
     volume_factors = np.linspace(1-x, 1+x, num_points)
-    cell = atoms.get_cell()
-    a, b, c, alpha, beta, gamma =  cell.cellpar() #[a, b, c, alpha, beta, gamma]
+    #cell = atoms.get_cell()
+    #a, b, c, alpha, beta, gamma =  cell.cellpar() #[a, b, c, alpha, beta, gamma]
     vols = []
     pes = []
-    if np.isclose(alpha, 90) and np.isclose(beta, 90) and np.isclose(gamma, 120):
-        logger.info('Detected hexagonal (hcp) structure. Applying anisotropic strain')
-        ca_ratio = c/a     
 
-        for i, factor in enumerate(volume_factors):
-            logger.debug(f"PARAMS {i}th strain applied ...")
-            new_vol = atoms.get_volume() * factor
-            new_a = (new_vol/(np.sqrt(3) * ca_ratio /2))**(1/3)
-            new_c = ca_ratio * new_a
-            new_cell = np.array([[new_a, 0, 0], [-0.5*new_a, np.sqrt(3)/2 * new_a, 0], [0,0,new_c]])
-            strained_atoms = copy.deepcopy(atoms)
-            strained_atoms.set_cell(new_cell, scale_atoms=True)
-            
-            post_calc = run_mlp(system, strained_atoms, mlp, device=device,isif=2)
-            vols.append(post_calc[2]/post_calc[0])
-            pes.append(post_calc[1]/post_calc[0]) 
-            logger.debug(f"OUTPUT vols and pes for strained structure ... {vols} {pes}") 
-    else:
-        logger.info('Detected cubic (fcc, bcc) structure. Applying isotropic strain')
-        for i, factor in enumerate(volume_factors):
-            logger.debug(f"PARAMS {i}th strain applied ...")
-            strained_atoms = copy.deepcopy(atoms)
-            new_cell = cell*factor**(1/3)
-            strained_atoms.set_cell(new_cell, scale_atoms=True)
-            
-            post_calc = run_mlp(system, strained_atoms, mlp, device, isif=2)
-            logger.debug(f"post_calc: {post_calc}")
-            vols.append(post_calc[2]/post_calc[0])
-            pes.append(post_calc[1]/post_calc[0])
-            logger.debug(f"OUTPUT pes and vols for strained structure ... {vols} {pes}") 
+    for i in enumerate(volume_factors):
+        logger.debug(f"PARAMS {i}th strain applied ...")
+        try:
+            atoms = read(os.path.join(os.environ['DFT'],row['system'],row['bravais'],'strain',str(i),'CONTCAR')
+        except:
+            atoms = read(os.path.join(os.environ['DFT'],row['system'],row['bravais'],'strain',str(i),'POSCAR')
+        post_calc = run_mlp(row['system'],atoms, mlp, device, isif=2)
+        vols.append(post_calc[2]/post_calc[0])
+        pes.append(post_calc[1]/post_calc[0])
+
+        logger.debug(f"post_calc: {post_calc}")
+        logger.debug(f"OUTPUT pes and vols for strained structure ... {vols} {pes}") 
+    
+    #if np.isclose(alpha, 90) and np.isclose(beta, 90) and np.isclose(gamma, 120):
+    #    logger.info('Detected hexagonal (hcp) structure. Applying anisotropic strain')
+    #    ca_ratio = c/a     
+
+    #    for i, factor in enumerate(volume_factors):
+    #        logger.debug(f"PARAMS {i}th strain applied ...")
+    #        new_vol = atoms.get_volume() * factor
+    #        new_a = (new_vol/(np.sqrt(3) * ca_ratio /2))**(1/3)
+    #        new_c = ca_ratio * new_a
+    #        new_cell = np.array([[new_a, 0, 0], [-0.5*new_a, np.sqrt(3)/2 * new_a, 0], [0,0,new_c]])
+    #        strained_atoms = copy.deepcopy(atoms)
+    #        strained_atoms.set_cell(new_cell, scale_atoms=True)
+    #        
+    #        post_calc = run_mlp(system, strained_atoms, mlp, device=device,isif=2)
+    #        vols.append(post_calc[2]/post_calc[0])
+    #        pes.append(post_calc[1]/post_calc[0]) 
+    #        logger.debug(f"OUTPUT vols and pes for strained structure ... {vols} {pes}") 
+    #else:
+    #    logger.info('Detected cubic (fcc, bcc) structure. Applying isotropic strain')
+    #    for i, factor in enumerate(volume_factors):
+    #        logger.debug(f"PARAMS {i}th strain applied ...")
+    #        strained_atoms = copy.deepcopy(atoms)
+    #        new_cell = cell*factor**(1/3)
+    #        strained_atoms.set_cell(new_cell, scale_atoms=True)
+    #        
+    #        post_calc = run_mlp(system, strained_atoms, mlp, device, isif=2)
+    #        logger.debug(f"post_calc: {post_calc}")
+    #        vols.append(post_calc[2]/post_calc[0])
+    #        pes.append(post_calc[1]/post_calc[0])
+    #        logger.debug(f"OUTPUT pes and vols for strained structure ... {vols} {pes}") 
+    
     return np.asarray(pes,dtype=np.float64), np.asarray(vols,dtype=np.float64)
 
 def run_eos(system, df, mlp, device,x=0.157, num_points=15, logger=logger):
@@ -108,7 +123,7 @@ def run_eos(system, df, mlp, device,x=0.157, num_points=15, logger=logger):
         atoms = set_mlp(atoms, mlp, device)
         run_mlp(system, atoms, mlp, device,isif=3, return_results=False)
             
-        pes, vols = strain_vol(system=system, atoms=atoms, mlp=mlp, device=device) 
+        pes, vols = strain_vol(row, mlp=mlp, device=device) 
         sys_pes.append(pes)
         sys_vols.append(vols)
         logger.debug(f"OUTPUTS - pes and vols appended: \n{sys_pes} {sys_vols}")
