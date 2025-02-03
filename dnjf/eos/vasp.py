@@ -134,7 +134,7 @@ def run_eos(system,out=None,logger=logger):
 
 def get_vasp_results(system, out=None, return_out=False):
     if out is None:
-        out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     volume_factors = np.linspace(0,15,15)
     vols_dft = []
     pes_dft = []
@@ -160,7 +160,7 @@ def get_vasp_results(system, out=None, return_out=False):
         pes_dft.append(np.asarray(pes, dtype=np.float64))
     out['pe-dft'] = pes_dft
     out['vol-dft'] = vols_dft
-    save_dict(out, path=os.path.join(os.environ['JAR'],f'{system}0.pkl'))
+    save_dict(out, path=os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     if return_out:
         return out
     return

@@ -26,8 +26,8 @@ def post_vasp(systems): # natvie python or create job
     set_env('eos',pbe=52)
     for system in systems:
         logger = get_logger(system, logfile=f'{system}.post.log',job='mlp')
-        job_with_node(system=system, task='eos', script='mlp.py',argv_=system, partition='gpul',nodelist='n137',run = True)
-        # python_jobs(system=system,task='eos',script_1='vasp.py',script_2 = 'mlp.py',argv_=system, partition='gpul', run=True)
+        # job_with_node(system=system, task='eos', script='vasp.py',argv_=system, partition='gpul',nodelist='n137',run = True)
+        python_job(system=system,task='eos',script='mlp.py',argv_=system, partition='loki4', run=True)
 
 def run_fit(system):
     job = python_job(system=system,task='eos',script='fit.py',argv_=system, partition='gpu2', run=True)
@@ -36,6 +36,6 @@ def run_fit(system):
 
 if __name__ == '__main__':
 #    systems=['Ca','Ni','Ti','Zn','Zr']
-    systems = ['Rh','Sr','Cr']
+    systems = ['Ca']
     # systems = ['Zr','Ti','Zn','Ni']
     post_vasp(systems)
