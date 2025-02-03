@@ -17,11 +17,11 @@ def get_ntasks(partition):
     else:
         return 1
 
-def gpu3_job(system, script, argv_,  partition='gpu3', output_file=None, return_path=False, run=False):
+def gpu3_job(system,task, script, argv_,  partition='gpu3', output_file=None, return_path=False, run=False):
     if output_file is None:
         output_file = f'{system}.out.x'
     ntasks=get_ntasks(partition)
-    script = os.path.join(os.environ['DNJF'],'dnjf',script) 
+    script = os.path.join(os.environ['DNJF'],'dnjf',task, script) 
     
     sbatch_content = f"""#!/bin/bash
 #SBATCH --job-name={system}
@@ -51,8 +51,8 @@ python {script} {argv_} > {output_file}
         os.chdir(path)
         subprocess.run(['sbatch',job]) 
     if return_path:
-        return job, path
-    return job 
+        return path
+    return 
 
 def python_jobs(system, task, script_1, script_2, argv_,  partition, output_file=None, return_path=False, run=False):
     if output_file is None:

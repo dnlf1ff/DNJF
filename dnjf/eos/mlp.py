@@ -4,9 +4,6 @@ from ase.io import read, write
 from ase.optimize import FIRE 
 from ase.constraints import UnitCellFilter
 
-# from sevenn.sevennet_calculator import SevenNetCalculator
-# from mace.calculators import mace_mp
-# from mattersim.forcefield import MatterSimCalculator
 import copy
 
 from loguru import logger
@@ -16,7 +13,6 @@ import pandas as pd
 
 from util import *
 from log import *
-from tqdm import tqdm
 
 def set_mlp(atoms, mlp, device, return_mlp=False,logger=logger):
     logger.log("DEBUG", "set mlp function")
@@ -121,7 +117,8 @@ def run_eos(system, df, mlp, device,x=0.157, num_points=15, logger=logger):
     df[f'vol-{mlp}'] = sys_vols
     return df
  
-def run_bench(system, mlp='matsim',logger=logger):
+def run_bench(system, mlp='matsim'):
+    logger = get_logger(system=system, logfile=f'{system}.{mlp}.log', job= 'mlp')
     device = get_device()
     df = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     df = run_eos(system, df, mlp=mlp, device = device, x=0.157, num_points=15)
@@ -129,16 +126,8 @@ def run_bench(system, mlp='matsim',logger=logger):
 
 
 def run_svn(system, df=None,logger=logger):
-    # mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-    
-    if system in ['Zr','Ti','Zn','Ni']:
-        mlps = ['omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-    if system in ['Rh','Sr']:
-        mlps = ['omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-    if system == 'Ca':
-        mlps = ['omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-    else:
-        mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
+    logger = get_logger(system=system, logfile=f'{system}.svn.log', job= 'mlp')
+    mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
     
     device=get_device()
     if df is None:
@@ -148,5 +137,6 @@ def run_svn(system, df=None,logger=logger):
         save_dict(df, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     return
 
+
 if __name__ == '__main__':
-    run_svn(sys.argv[1])
+    run_bench(sys.argv[1])
