@@ -41,7 +41,7 @@ def set_env(task,pbe):
 
     os.environ['PBE'] = os.path.join(os.environ['DNJF'],'potpaw',str(pbe))
     os.environ['MLP'] = os.path.join(os.environ['DNJF'], 'mlp')
-    os.environ['PRESET'] = os.path.join(os.environ['DNJF'],'presets')
+    os.environ['CONF'] = os.path.join(os.environ['DNJF'],'configs',task)
     os.environ['JOB'] = os.path.join(os.environ['DNJF'], 'jobs')
 
 def make_dir(path, return_path = False):
@@ -50,8 +50,9 @@ def make_dir(path, return_path = False):
         return path
     return
   
-def load_conf(conf_yaml):
-    with open(conf_yaml, 'r') as inp:
+def load_conf():
+    conf = os.path.join(os.environ['CONF'],'inp.yaml')
+    with open(conf, 'r') as inp:
         inp_yaml = yaml.safe_load(inp)
         return inp_yaml
 

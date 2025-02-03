@@ -1,0 +1,52 @@
+Ag:
+    mp_id: mp-124 
+    bravais: fcc
+
+Au:
+    mp_id: mp-81
+    bravais: fcc
+
+Cr:
+    mp_id: mp-90
+    bravais: bcc
+
+Cu:
+  mp_id: mp-30
+  bravais: fcc
+
+Pt:
+    mp_id: mp-126
+    bravais: fcc
+
+Mo:
+    mp_id: mp-129
+    bravais: bcc
+
+V:
+    mp_id: mp-146
+    bravais: bcc
+
+
+Nb:
+    mp_id: mp-75
+    bravais: bcc
+
+CuAu:
+  mp_id: mp-522
+  space_group: P4/mmm
+  structure: L10
+  crystal_system: tetragonal
+
+CuAu3:
+  mp_id: mp-2103
+  space_group: Pm3m
+  structure: L12
+  cystal_system: cubic
+
+Cu3Au:
+  mp_id: mp-2258 
+  space_group: Pm3m
+  structure: L12
+  cystal_system: cubic
+
+
