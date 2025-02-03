@@ -14,12 +14,13 @@ from util import *
 from shell import *
 
 
-def concat_potcar(system, path):
-    if system in ['CuAu','CuAu3','Cu3Au']:
-        subprocess.run(['cp', os.path.join(os.environ['PBE'],'cu','POTCAR'), os.path.join(path,'POTCAR.cu')])
-        subprocess.run(['cp', os.path.join(os.environ['PBE'],'au','POTCAR'), os.path.join(path,'POTCAR.au')])
-        subprocess.run(['cat',os.path.join(path, 'POTCAR.cu'), os.path.join(path, 'POTCAR.au'),'>','POTCAR' ],cwd=path)
-
+def concat_potcar(path):
+    subprocess.run(['cp', os.path.join(os.environ['PBE'],'cu','POTCAR'), os.path.join(path,'POTCAR.cu')])
+    subprocess.run(['cp', os.path.join(os.environ['PBE'],'au','POTCAR'), os.path.join(path,'POTCAR.au')])
+    with open(os.path.join(path, 'POTCAR'), 'wb') as potcar:
+        for fname in [os.path.join(path, 'POTCAR.cu'), os.path.join(path, 'POTCAR.au')]:
+            with open(fname, 'rb') as infile:
+                potcar.write(infile.read())
 
 def write_inputs(system, logger=logger):
     inp = load_conf()
@@ -28,10 +29,10 @@ def write_inputs(system, logger=logger):
     inputs = result['input']
     orig_inputs = result['orig_inputs']
     path = make_dir(os.path.join(os.environ['DFT'], system.lower()), return_path=True)
-    try:
+    if len(system) < 3: 
         subprocess.run(['cp', os.path.join(os.environ['PBE'],system.lower(),'POTCAR'), os.path.join(path,'POTCAR')])
-    except:
-        concat_potcar(system, path)
+    else:
+        concat_potcar(path)
     
     subprocess.run(['chmod','-w','POTCAR'], cwd=path)
     subprocess.run(['chmod','+x','POTCAR'], cwd=path)
@@ -44,7 +45,7 @@ def write_inputs(system, logger=logger):
     kpoints.write_file(os.path.join(path, 'KPOINTS'))
     poscar.write_file(os.path.join(path, 'POSCAR'))
 
-def run_relax(system, partition):
+def vasp_relax(system, partition):
     path = os.path.join(os.environ['DFT'], system.lower())
     vasp_job(system=system, path=path, partition=partition, return_path=False, run=True)
 
