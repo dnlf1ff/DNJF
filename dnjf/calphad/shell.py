@@ -2,11 +2,12 @@ import os
 import subprocess
 import shutil
 import sys
+import random
 
 def get_ntasks(partition):
     if partition=='loki4':
         return 28
-    elif partition=='loki3':
+    elif partition in ['loki3','jinvk']:
         return 24
     elif partition=='loki2':
         return 20
@@ -17,15 +18,24 @@ def get_ntasks(partition):
     else:
         return 1
 
-def gpu3_job(system, task,script, argv_,  partition='gpu3', output_file=None, return_path=False, run=False):
-    if output_file is None:
-        output_file = f'{system}.out.x'
+def get_gpu(partition):
+    if 'gpu' in partition:
+        return 'export CUDA_DEVICE_ORDER=PCI_BUS_ID\nexport CUDA_VISIBLE_DEVICES=1'
+    else:
+        return 'echo "GPU DEVICE not allotcated"' 
+
+
+
+def gpu3_jobs(argv_,task, script_1, script_2,  partition='gpu3', job_name=None, return_path=False, run=False):
+    if job_name is None:
+        job_name = task
     ntasks=get_ntasks(partition)
-    script = os.path.join(os.environ['DNJF'],'dnjf',task,script) 
+    script_1 = os.path.join(os.environ['DNJF'],'dnjf',task, script_1) 
+    script_2 = os.path.join(os.environ['DNJF'],'dnjf',task, script_2) 
     
     sbatch_content = f"""#!/bin/bash
-#SBATCH --job-name={system}
-#SBATCH --output=system.%j.x
+#SBATCH --job-name={job_name}
+#SBATCH --output=calc.%j.x
 #SBATCH --error=calc.%j.x
 #SBATCH --time=4:00:00
 #SBATCH --nodes=1
@@ -39,36 +49,51 @@ if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
     exit 1
 fi
 
-python {script} {argv_} > {output_file}
+echo "running {script_1} for {argv_} ..."
+
+python {script_1} {argv_}
+
+echo "{script_1} for {argv_} completed"
+
+echo "now running {script_2} for {argv_} ..."
+
+python {script_2} {argv_}
+
+echo "{script_2} for {argv_} done"
+
 """
     path = os.environ['RUN']
-    job = f"{system.lower()}.sh"
-    with open(os.path.join(path, job), "w") as sbatch_file:
+    job_name = f"{job_name}.sh"
+    with open(os.path.join(path, job_name), "w") as sbatch_file:
         sbatch_file.write(sbatch_content)
-    print(f"SBATCH file {job} created successfully!")
+    print(f"SBATCH file {job_name} created successfully!")
     
     if run:
         os.chdir(path)
-        subprocess.run(['sbatch',job]) 
+        subprocess.run(['sbatch',job_name]) 
     if return_path:
-        return job, path
-    return job 
+        return path
+    return 
 
-def python_jobs(system, task, script_1, script_2, argv_,  partition, output_file=None, return_path=False, run=False):
-    if output_file is None:
-        output_file = f'{system}.out.x'
-    script_1 = os.path.join(os.environ['DNJF'],'dnjf',task,script_1) 
-    script_2 = os.path.join(os.environ['DNJF'],'dnjf',task,script_2) 
+
+def gpu3_job(argv_,task, script, job_name=None, partition='gpu3', return_path=False, run=False):
+    if job_name is None:
+        job_name=f'{task}.{os.environ["PBE"]}'
+    else:
+        job_name=f'{job_name}.{os.environ["PBE"]}'
+
     ntasks=get_ntasks(partition)
+    script = os.path.join(os.environ['DNJF'],'dnjf',task, script) 
     
     sbatch_content = f"""#!/bin/bash
-#SBATCH --job-name={system}
+#SBATCH --job-name={job_name}
 #SBATCH --output=calc.%j.x
 #SBATCH --error=calc.%j.x
 #SBATCH --time=4:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks={ntasks}
 #SBATCH --partition={partition}
+#SBATCH --gres=gpu:1
 
 echo "SLRUM_NTASKS: $SLURM_NTASKS"
 if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
@@ -76,34 +101,33 @@ if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
     exit 1
 fi
 
-python {script_1} {argv_}
-
-python {script_2} {argv_}
+python {script} {argv_}
 """
     path = os.environ['RUN']
-    job = f"{system.lower()}.sh"
-
-    with open(os.path.join(path, job), "w") as sbatch_file:
+    job_name = f"{job_name}.sh"
+    with open(os.path.join(path, job_name), "w") as sbatch_file:
         sbatch_file.write(sbatch_content)
-    print(f"SBATCH file {job} created successfully!")
+    print(f"SBATCH file {job_name} created successfully!")
     
     if run:
         os.chdir(path)
-        subprocess.run(['sbatch',job])
-
+        subprocess.run(['sbatch',job_name]) 
     if return_path:
         return path
-    return
+    return 
 
+def jobs_with_node(argv_, task, script_1, script_2,  partition, nodelist, job_name=None ,output_file=None, return_path=False, run=False):
+    if job_name is None:
+        job_name = f'{task}.{os.environ["PBE"]}'
+    else:
+        job_name = f'{job_name}.{os.environ["PBE"]}'
 
-def job_with_node(system, task, script, argv_,  partition, nodelist, output_file=None, return_path=False, run=False):
-    if output_file is None:
-        output_file = f'{system}.out.x'
-    script = os.path.join(os.environ['DNJF'],'dnjf',task,script) 
+    script_1 = os.path.join(os.environ['DNJF'],'dnjf',task,script_1) 
+    script_2 = os.path.join(os.environ['DNJF'],'dnjf',task,script_2) 
     ntasks=get_ntasks(partition)
-    
+    gpu_shin = get_gpu(partition) 
     sbatch_content = f"""#!/bin/bash
-#SBATCH --job-name={system}
+#SBATCH --job-name={job_name}
 #SBATCH --output=calc.%j.x
 #SBATCH --error=calc.%j.x
 #SBATCH --time=4:00:00
@@ -111,24 +135,37 @@ def job_with_node(system, task, script, argv_,  partition, nodelist, output_file
 #SBATCH --ntasks={ntasks}
 #SBATCH --partition={partition}
 #SBATCH --nodelist={nodelist}
+
 echo "SLRUM_NTASKS: $SLURM_NTASKS"
 if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
     echo "Error: SLRUM_NTASKS is not set or less than or equal to 0"
     exit 1
 fi
 
-python {script} {argv_}
+{gpu_shin}
+
+echo "running {script_1} for {argv_} ..."
+
+python {script_1} {argv_}
+
+echo "{script_1} for {argv_} completed"
+
+echo "now running {script_2} for {argv_} ..."
+
+python {script_2} {argv_}
+
+echo "{script_2} for {argv_} done"
+
 """
     path = os.environ['RUN']
-    job = f"{system.lower()}.sh"
-
-    with open(os.path.join(path, job), "w") as sbatch_file:
+    job_name = f'{job_name}.sh'
+    with open(os.path.join(path, job_name), "w") as sbatch_file:
         sbatch_file.write(sbatch_content)
-    print(f"SBATCH file {job} created successfully!")
+    print(f"SBATCH file {job_name} created successfully!")
     
     if run:
         os.chdir(path)
-        subprocess.run(['sbatch',job])
+        subprocess.run(['sbatch',job_name])
 
     if return_path:
         return path
@@ -136,20 +173,24 @@ python {script} {argv_}
 
 
 
-def python_job(system, task, script, argv_,  partition, output_file=None, return_path=False, run=False):
+def job_with_node(argv_, task, script,  partition, nodelist, job_name=None, output_file=None, return_path=False, run=False):
     if output_file is None:
-        output_file = f'{system}.out.x'
-    script = os.path.join(os.environ['DNJF'],'dnjf',task,script) 
+        script = os.path.join(os.environ['DNJF'],'dnjf',task,script) 
     ntasks=get_ntasks(partition)
-    
+    if job_name is None:
+        job_name = f'{task}.{os.environ["PBE"]}'
+    else:
+        job_name = f'{job_name}.{os.environ["PBE"]}'
     sbatch_content = f"""#!/bin/bash
-#SBATCH --job-name={system}
+
+#SBATCH --job-name={job_name}
 #SBATCH --output=calc.%j.x
 #SBATCH --error=calc.%j.x
 #SBATCH --time=4:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks={ntasks}
 #SBATCH --partition={partition}
+#SBATCH --nodelist={nodelist}
 
 echo "SLRUM_NTASKS: $SLURM_NTASKS"
 if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
@@ -157,29 +198,38 @@ if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
     exit 1
 fi
 
+echo "running {script} for {argv_} ..."
+
 python {script} {argv_}
 """
     path = os.environ['RUN']
-    job = f"{system.lower()}.sh"
+    job_name = f"{job_name}.sh"
 
-    with open(os.path.join(path, job), "w") as sbatch_file:
+    with open(os.path.join(path, job_name), "w") as sbatch_file:
         sbatch_file.write(sbatch_content)
-    print(f"SBATCH file {job} created successfully!")
+    print(f"SBATCH file {job_name} created successfully!")
     
     if run:
         os.chdir(path)
-        subprocess.run(['sbatch',job])
+        subprocess.run(['sbatch',job_name])
 
     if return_path:
         return path
     return
 
 
-
-def vasp_job(system, path, partition, output_file='stdout.x', return_path=True, run=False):
+def vasp_job(system, path, partition, nodelist=None, output_file='stdout.x',return_path=True, run=False):
     if output_file is None:
         output_file = f'{system}.vasp.x'
     ntasks=get_ntasks(partition)
+    
+    if nodelist is None and partition == 'jinvk':
+        result = random.choice([True, False])
+        if result:
+            nodelist = 'n120'
+        else:
+            nodelist = 'n121'
+
     sbatch_content = f"""#!/bin/bash
 #SBATCH --job-name={system}.vasp      # Job name
 #SBATCH --output={system}.%j.log      # Output file (%j will be replaced with job ID)
@@ -188,6 +238,7 @@ def vasp_job(system, path, partition, output_file='stdout.x', return_path=True, 
 #SBATCH --ntasks={ntasks}                             # Total number of tasks (MPI processes)
 #SBATCH --time=04:00:00                          # Time limit hrs:min:sec
 #SBATCH --partition={partition}		  	 # Partition name (update based on your cluster)
+#SBATCH --nodelist={nodelist}
 
 echo "SLURM_NTASKS: $SLURM_NTASKS"
 

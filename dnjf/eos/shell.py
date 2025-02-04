@@ -25,7 +25,7 @@ def get_gpu(partition):
 
 
 
-def gpu3_jobs(argv_,task, script_1, script_2,  partition='gpu3', job_name=None, output_file=None, return_path=False, run=False):
+def gpu3_jobs(argv_,task, script_1, script_2,  partition='gpu3', job_name=None, return_path=False, run=False):
     if job_name is None:
         job_name = task
     ntasks=get_ntasks(partition)
@@ -75,15 +75,18 @@ echo "{script_2} for {argv_} done"
     return 
 
 
-def gpu3_job(system,task, script, argv_,  partition='gpu3', output_file=None, return_path=False, run=False):
-    if output_file is None:
-        output_file = f'{system}.out.x'
+def gpu3_job(argv_,task, script, job_name=None, partition='gpu3', return_path=False, run=False):
+    if job_name is None:
+        job_name=f'{task}.{os.environ["PBE"]}'
+    else:
+        job_name=f'{job_name}.{os.environ["PBE"]}'
+
     ntasks=get_ntasks(partition)
     script = os.path.join(os.environ['DNJF'],'dnjf',task, script) 
     
     sbatch_content = f"""#!/bin/bash
-#SBATCH --job-name={system}
-#SBATCH --output=system.%j.x
+#SBATCH --job-name={job_name}
+#SBATCH --output=calc.%j.x
 #SBATCH --error=calc.%j.x
 #SBATCH --time=4:00:00
 #SBATCH --nodes=1
@@ -97,17 +100,17 @@ if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
     exit 1
 fi
 
-python {script} {argv_} > {output_file}
+python {script} {argv_}
 """
     path = os.environ['RUN']
-    job = f"{system.lower()}.sh"
-    with open(os.path.join(path, job), "w") as sbatch_file:
+    job_name = f"{job_name}.sh"
+    with open(os.path.join(path, job_name), "w") as sbatch_file:
         sbatch_file.write(sbatch_content)
-    print(f"SBATCH file {job} created successfully!")
+    print(f"SBATCH file {job_name} created successfully!")
     
     if run:
         os.chdir(path)
-        subprocess.run(['sbatch',job]) 
+        subprocess.run(['sbatch',job_name]) 
     if return_path:
         return path
     return 
@@ -178,6 +181,7 @@ def job_with_node(argv_, task, script,  partition, nodelist, job_name=None, outp
     else:
         job_name = f'{job_name}.{os.environ["PBE"]}'
     sbatch_content = f"""#!/bin/bash
+
 #SBATCH --job-name={job_name}
 #SBATCH --output=calc.%j.x
 #SBATCH --error=calc.%j.x

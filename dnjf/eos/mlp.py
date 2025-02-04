@@ -39,8 +39,10 @@ def run_mlp(system, atoms, mlp, device, isif=3, return_results = True,logger=log
     
     atoms = set_mlp(atoms, mlp, device)
     filtered = UnitCellFilter(atoms, mask = [True]*6, constant_volume=False)
+    calculation_type='relaxation'
     if isif == 2:
         filtered = UnitCellFilter(atoms, mask = [False]*6, constant_volume=True)
+        calculation_type='static calculation'
 
     optimizer = FIRE(filtered, logfile=os.path.join(os.environ['LOG'],'mlp',system.lower(),f'{system.lower()}.{mlp}.ase'), trajectory=os.path.join(os.environ['TRAJ'],f'{system}.{mlp}.traj'))
     
@@ -51,7 +53,9 @@ def run_mlp(system, atoms, mlp, device, isif=3, return_results = True,logger=log
     force = atoms.get_forces()
     stress = atoms.get_stress()/GPa
     
-    logger.debug(f"OUTPUT structural relaxation with ase calculator - {natoms} {pe} {vol} {stress} {force}")
+
+
+    logger.debug(f"OUTPUT {calculation_type} with ase calculator - {natoms} {pe} {vol} {stress} {force}")
 
     if return_results:
         return len(atoms), pe, vol, force, stress
@@ -137,34 +141,27 @@ def run_eos(out, mlp, device,x=0.157, num_points=15, logger=logger):
     out[f'vol-{mlp}'] = sys_vols
     return out
  
-def run_bench(system, mlp='matsim'):
-    logger = get_logger(system=system, logfile=f'{system}.{mlp}.log', job= 'mlp')
-    device = get_device()
-    logger.info(f'device: {device}')
-    out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
-    out = run_eos(out, mlp=mlp, device = device, x=0.157, num_points=15)
-    save_dict(out, (os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')))
+def run_bench(systems, mlp='matsim'):
+    for system in systems:
+        logger = get_logger(system=system, logfile=f'{system}.{mlp}.log', job= 'mlp')
+        device = get_device()
+        logger.info(f'device: {device}')
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+        out = run_eos(out=out, mlp=mlp, device = device)
+        save_dict(out, (os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')))
 
 
 def run_svn(systems, out=None,logger=logger):
     for system in systems:
         logger = get_logger(system=system, logfile=f'{system}.svn.log', job= 'mlp')
-        # mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-        if system in ['Cd','Cu','Co']:
-            mlps = ['omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-        elif system in ['Ca']:
-            mlps = ['omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-        elif system in ['Ir', 'K', 'Li', 'Mg','Mo']:
-            mlps = ['omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-        else:
-            mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
+        mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
         device=get_device()
         logger.info(f'device: {device}')
         if out is None:
             try:
                 out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
             except Exception as e:
-                out = load_dict(os.path.join(os.environ['JAR'], f'{system}_mlp.pkl'))
+                out = load_dict(os.path.join(os.environ['JAR'], f'{system}0.pkl'))
         for mlp in mlps:
             out = run_eos(out=out,mlp=mlp, device=device) 
             save_dict(out, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))

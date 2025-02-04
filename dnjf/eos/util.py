@@ -38,8 +38,8 @@ def set_env(task,pbe):
     os.environ['TRAJ']=make_dir(os.path.join(os.environ['OUT'],'traj'), return_path=True)
 
     os.environ['RUN'] = make_dir(os.path.join(os.environ['TASK'],'run'), return_path=True)
-
-    os.environ['PBE'] = os.path.join(os.environ['DNJF'],'potpaw',str(pbe))
+    os.environ['PBE'] = str(pbe)
+    os.environ['POTPAW'] = os.path.join(os.environ['DNJF'],'potpaw',str(pbe))
     os.environ['MLP'] = os.path.join(os.environ['DNJF'], 'mlp')
     os.environ['CONF'] = os.path.join(os.environ['DNJF'],'config',task)
     os.environ['JOB'] = os.path.join(os.environ['DNJF'], 'jobs')

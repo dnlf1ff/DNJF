@@ -37,45 +37,45 @@ def fit_bm(system, vol, pe, conf, verbose=False, maxfev=50000,ftol=1e-8, xtol=1e
     
     return vol_fit, pe_fit, B0_fit #mp.arrays
 
-def comrade(system, df, mlps, return_df=True, logger=logger):
-    # df = df.iloc[::-1]
-    df.reset_index(inplace=True)
-    df.drop('index',axis=1, inplace=True)
+def comrade(system, out, mlps, return_out=True, logger=logger):
+    # out = out.iloc[::-1]
+    out.reset_index(inplace=True)
+    out.drop('index',axis=1, inplace=True)
 
-    bravais_s = df['bravais'].to_list()
+    bravais_s = out['bravais'].to_list()
     tag=f'{bravais_s[0]}{bravais_s[1]}'
     for mlp in mlps:
-        df[f'pe-dft_{mlp}-rel'] = None
-        df[f'pe-{mlp}-rel'] = None
-        df[f'del_E-{mlp}'] = None
-        df['del_E-dft'] = None
-        dft_min=min(df['pe-dft'][0].min(), df['pe-dft'][1].min())
-        mlp_min=min(df[f'pe-{mlp}'][0].min(), df[f'pe-{mlp}'][1].min())
-        for i, row in df.iterrows():
-            df.at[i, f'pe-dft_{mlp}-rel'] = np.asarray(row['pe-dft'] - dft_min)
-            df.at[i, f'pe-{mlp}-rel'] = np.asarray(row[f'pe-{mlp}'] - mlp_min)
-            df.at[i, f'del_E-dft'] = df['pe-dft'][0].min() - df['pe-dft'][1].min()
-            df.at[i, f'del_E-{mlp}'] = df[f'pe-{mlp}'][0].min() - df[f'pe-{mlp}'][1].min()
-            save_dict(df, os.path.join(os.environ['JAR'], f'{system}_{tag}_fit.pkl'))
-    if return_df:
-        return df
+        out[f'pe-dft_{mlp}-rel'] = None
+        out[f'pe-{mlp}-rel'] = None
+        out[f'del_E-{mlp}'] = None
+        out['del_E-dft'] = None
+        dft_min=min(out['pe-dft'][0].min(), out['pe-dft'][1].min())
+        mlp_min=min(out[f'pe-{mlp}'][0].min(), out[f'pe-{mlp}'][1].min())
+        for i, row in out.iterrows():
+            out.at[i, f'pe-dft_{mlp}-rel'] = np.asarray(row['pe-dft'] - dft_min)
+            out.at[i, f'pe-{mlp}-rel'] = np.asarray(row[f'pe-{mlp}'] - mlp_min)
+            out.at[i, f'del_E-dft'] = out['pe-dft'][0].min() - out['pe-dft'][1].min()
+            out.at[i, f'del_E-{mlp}'] = out[f'pe-{mlp}'][0].min() - out[f'pe-{mlp}'][1].min()
+            save_dict(out, os.path.join(os.environ['JAR'], f'{system}_{tag}_fit.pkl'))
+    if return_out:
+        return out
     return
 
-def fit_system(system, mlps, conf=None, df= None, return_df = False, save_df=True,logger=logger):
-    bravais_s = df['bravais'].to_list() 
+def fit_system(system, mlps, conf=None, out= None, return_out = False, save_out=True,logger=logger):
+    bravais_s = out['bravais'].to_list() 
     tag=f'{bravais_s[0]}{bravais_s[1]}'
     if conf is None:
         conf = load_conf()
-    if df is None:
-        df = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+    if out is None:
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     for mlp in mlps:
-        df[f'vol-{mlp}-fit'] = None
-        df[f'pe-{mlp}-fit'] =  None
-        df[f'vol-dft_{mlp}-fit'] =  None
-        df[f'pe-dft_{mlp}-fit'] =  None
-        df[f'b0-{mlp}'] = None
-        df[f'del_b0-dft']=None
-        for i, row in df.iterrows():
+        out[f'vol-{mlp}-fit'] = None
+        out[f'pe-{mlp}-fit'] =  None
+        out[f'vol-dft_{mlp}-fit'] =  None
+        out[f'pe-dft_{mlp}-fit'] =  None
+        out[f'b0-{mlp}'] = None
+        out[f'del_b0-dft']=None
+        for i, row in out.iterrows():
             try:
                 fit_vol_mlp, fit_pe_mlp, b0_mlp = fit_bm(system, vol=row[f'vol-{mlp}'], pe=row[f'pe-{mlp}-rel'], conf=conf, verbose=True)
                 fit_vol_dft, fit_pe_dft, b0_dft = fit_bm(system, vol=row[f'vol-dft'], pe=row[f'pe-dft_{mlp}-rel'], conf=conf, verbose=True)
@@ -85,28 +85,29 @@ def fit_system(system, mlps, conf=None, df= None, return_df = False, save_df=Tru
                 
             pe_min = min(row[f'pe-{mlp}'])
             
-            df.at[i,f'vol-{mlp}-fit'] = fit_vol_mlp #list of np.array
-            df.at[i, f'pe-{mlp}-fit'] = fit_pe_mlp # ''
-            df.at[i,f'vol-dft_{mlp}-fit'] = fit_vol_dft #list of np.array
-            df.at[i, f'pe-dft_{mlp}-fit'] = fit_pe_dft # ''
-            df.at[i,f'b0-{mlp}'] = b0_mlp
-            df.at[i, 'del_b0-dft'] = b0_dft
+            out.at[i,f'vol-{mlp}-fit'] = fit_vol_mlp #list of np.array
+            out.at[i, f'pe-{mlp}-fit'] = fit_pe_mlp # ''
+            out.at[i,f'vol-dft_{mlp}-fit'] = fit_vol_dft #list of np.array
+            out.at[i, f'pe-dft_{mlp}-fit'] = fit_pe_dft # ''
+            out.at[i,f'b0-{mlp}'] = b0_mlp
+            out.at[i, 'del_b0-dft'] = b0_dft
 
-        eos_plot(system, df, mlp) #TODO: may not be functional coding but qnd ...
-        if save_df:
-            save_dict(df, os.path.join(os.environ['JAR'],f'{system}_{tag}_fit.pkl'))
-    if return_df:
-        return df
+        eos_plot(system, out, mlp) #TODO: may not be functional coding but qnd ...
+        if save_out:
+            save_dict(out, os.path.join(os.environ['JAR'],f'{system}_{tag}_fit.pkl'))
+    if return_out:
+        return out
     return
 
-def fit_main(system, mlps, df=None):
-    logger = get_logger(system, f'{system}.fit.log',job='fit')
-    if df is None:
-        df = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
-        df_s = [df.drop(i) for i in range(3)]
-        for df_ in df_s:
-            df_ = comrade(system, df_, mlps)
-            fit_system(system, mlps, df=df_)
+def fit_main(systems, mlps, out=None):
+    for system in systems:
+        logger = get_logger(system, f'{system}.fit.log',job='fit')
+        if out is None:
+            out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+            out_s = [out.drop(i) for i in range(3)]
+            for out_ in out_s:
+                out_ = comrade(system, out_, mlps)
+                fit_system(system, mlps, out=out_)
 
 if __name__ == '__main__':
     mlps = ['chgTot','chgTot_l3i3','chgTot_l4i3','chgTot_l3i5','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','m3g_r55','m3g_r6','m3g_n','r5pp','omat_i3pp','omat_i3pp','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','mace','matsim']
