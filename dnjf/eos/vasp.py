@@ -24,45 +24,47 @@ def get_system_out(out, system=None, mp_id=None):
             mask = out['mp_id'].apply(lambda x: x == mp_id)
     return out[mask]
 
-def write_output(system, inp=None, return_out=False):
-    if inp is None:
-        inp = load_conf()
-    path = os.path.join(os.environ['JAR'], f'{system}0.pkl')
-    out = pd.DataFrame()
-    out['mp_id'] = inp[system]['mp_id']
-    out['bravais'] = inp[system]['bravais']
-    out['system'] = [system] * len(out)
-    save_dict(data=out, path=path)
+def write_outs(systems, inp=None, return_out=False):
+    for system in systems:
+        if inp is None:
+            inp = load_conf()
+        path = os.path.join(os.environ['JAR'], f'{system}0.pkl')
+        out = pd.DataFrame()
+        out['mp_id'] = inp[system]['mp_id']
+        out['bravais'] = inp[system]['bravais']
+        out['system'] = [system] * len(out)
+        save_dict(data=out, path=path)
     if return_out:
         return out
     return
 
-def write_inputs(system, out=None, check_potpaw=True,logger=logger):
-    if out is None:
-        out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
-    mpr=MPRester(api_key=os.environ['API_KEY'],use_document_model=False)
-    _path = make_dir(os.path.join(os.environ['DFT'], system.lower()), return_path=True)
-    shutil.copy(os.path.join(os.environ['PBE'],system.lower(),'POTCAR'), os.path.join(_path,'POTCAR'))
-    for row in out.iterrows():
-        row=row[1]
-        mp_id=row['mp_id']
-        task = mpr.materials.tasks.search([mp_id])[0]
-        inputs = task['input']
-        orig_inputs = task['orig_inputs']
+def write_inputs(systems, out=None, check_potpaw=True,logger=logger):
+    for system in systems:
+        if out is None:
+            out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
+            mpr=MPRester(api_key=os.environ['API_KEY'],use_document_model=False)
+            _path = make_dir(os.path.join(os.environ['DFT'], system.lower()), return_path=True)
+            shutil.copy(os.path.join(os.environ['PBE'],system.lower(),'POTCAR'), os.path.join(_path,'POTCAR'))
+        for row in out.iterrows():
+            row=row[1]
+            mp_id=row['mp_id']
+            task = mpr.materials.tasks.search([mp_id])[0]
+            inputs = task['input']
+            orig_inputs = task['orig_inputs']
+        
+            incar=Incar(inputs['incar'])
+            kpoints = Kpoints.from_dict(orig_inputs['kpoints'])
+            poscar = Poscar(Structure.from_dict(inputs['structure']))
     
-        incar=Incar(inputs['incar'])
-        kpoints = Kpoints.from_dict(orig_inputs['kpoints'])
-        poscar = Poscar(Structure.from_dict(inputs['structure']))
-    
-        path = make_dir(os.path.join(_path, row['bravais']), return_path=True)
+            path = make_dir(os.path.join(_path, row['bravais']), return_path=True)
 
-        incar.write_file(os.path.join(path, 'INCAR'))
-        kpoints.write_file(os.path.join(path, 'KPOINTS'))
-        poscar.write_file(os.path.join(path, 'POSCAR'))
-        shutil.copy(os.path.join(os.environ['PBE'],system.lower(),'POTCAR'), os.path.join(path,'POTCAR'))
-        if check_potpaw:
-            potcar_spec = inputs['potcar_spec']
-            logger.log("INFO",f"{potcar_spec}")
+            incar.write_file(os.path.join(path, 'INCAR'))
+            kpoints.write_file(os.path.join(path, 'KPOINTS'))
+            poscar.write_file(os.path.join(path, 'POSCAR'))
+            shutil.copy(os.path.join(os.environ['PBE'],system.lower(),'POTCAR'), os.path.join(path,'POTCAR'))
+            if check_potpaw:
+                potcar_spec = inputs['potcar_spec']
+                logger.log("INFO",f"{potcar_spec}")
 
 
 def run_relax(system, partition, out=None):
@@ -136,40 +138,40 @@ def run_eos(system,out=None,logger=logger):
         subprocess.run(['sbatch', 'run-eos.sh'], cwd=system_strain_path)
 
 
-def get_vasp_results(system, out=None, return_out=False):
-    logger = get_logger(system, logfile=f'{system}.vasp.log',job='mlp')
-    if out is None:
-        out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
-    volume_factors = np.linspace(0,15,15)
-    vols_dft = []
-    pes_dft = []
-        
-    for row in out.iterrows():
-        row=row[1]
-        path = os.path.join(os.environ['DFT'], system.lower(), row['bravais'],'strain')
-        vols = []
-        pes = []
-        for i, factor in enumerate(volume_factors):
-            strain_path = os.path.join(path, str(i))
-            logger.log("INFO",f"strain_path : {strain_path}")
-            o = Outcar(os.path.join(strain_path, "OUTCAR"))
-            a = read(os.path.join(strain_path,'POSCAR'))
-            
-            vols.append(a.get_volume()/len(a))
-            pes.append(o.final_fr_energy/len(a))
-            logger.log("INFO",f"{i}th volume: {a.get_volume()/len(a)}") 
-            logger.log("INFO",f"{i}th pe: {o.final_fr_energy/len(a)}")
-            logger.log("INFO", f"appended volumes: {vols}")
-            logger.log("INFO",f"appended pes: {pes}")
-        vols_dft.append(np.asarray(vols, dtype=np.float64))
-        pes_dft.append(np.asarray(pes, dtype=np.float64))
-    out['pe-dft'] = pes_dft
-    out['vol-dft'] = vols_dft
-    save_dict(out, path=os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+def get_vasp_results(systems, out=None, return_out=False):
+    for system in systems:
+        logger = get_logger(system, logfile=f'{system}.vasp.log',job='mlp')
+        if out is None:
+            out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
+        volume_factors = np.linspace(0,15,15)
+        vols_dft = []
+        pes_dft = []
+        for row in out.iterrows():
+            row=row[1]
+            path = os.path.join(os.environ['DFT'], system.lower(), row['bravais'],'strain')
+            vols = []
+            pes = []
+            for i, factor in enumerate(volume_factors):
+                strain_path = os.path.join(path, str(i))
+                logger.log("INFO",f"strain_path : {strain_path}")
+                o = Outcar(os.path.join(strain_path, "OUTCAR"))
+                a = read(os.path.join(strain_path,'POSCAR'))
+                
+                vols.append(a.get_volume()/len(a))
+                pes.append(o.final_fr_energy/len(a))
+                logger.log("INFO",f"{i}th volume: {a.get_volume()/len(a)}") 
+                logger.log("INFO",f"{i}th pe: {o.final_fr_energy/len(a)}")
+                logger.log("INFO", f"appended volumes: {vols}")
+                logger.log("INFO",f"appended pes: {pes}")
+            vols_dft.append(np.asarray(vols, dtype=np.float64))
+            pes_dft.append(np.asarray(pes, dtype=np.float64))
+        out['pe-dft'] = pes_dft
+        out['vol-dft'] = vols_dft
+        save_dict(out, path=os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     if return_out:
         return out
     return
 
 if __name__ == '__main__':
-    write_output(system=sys.argv[1])
-    get_vasp_results(system=sys.argv[1])
+    write_outs(systems=sys.argv[1:])
+    get_vasp_results(systems=sys.argv[1:])
