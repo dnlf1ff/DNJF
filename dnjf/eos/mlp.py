@@ -60,18 +60,23 @@ def run_mlp(system, atoms, mlp, device, isif=3, return_results = True,logger=log
 
 def strain_vol(row, mlp, device, x=0.157, num_points=15,logger=logger):
     logger.log("DEBUG", "strain_vol FUNC")
-    volume_factors = np.linspace(1-x, 1+x, num_points)
+    #volume_factors = np.linspace(1-x, 1+x, num_points)
+    volume_factors = np.arange(0,15,1)
     #cell = atoms.get_cell()
     #a, b, c, alpha, beta, gamma =  cell.cellpar() #[a, b, c, alpha, beta, gamma]
     vols = []
     pes = []
 
-    for i in enumerate(volume_factors):
+    for i in volume_factors:
         logger.debug(f"PARAMS {i}th strain applied ...")
+
         try:
-            atoms = read(os.path.join(os.environ['DFT'],row['system'],row['bravais'],'strain',str(i),'CONTCAR')
-        except:
-            atoms = read(os.path.join(os.environ['DFT'],row['system'],row['bravais'],'strain',str(i),'POSCAR')
+            atoms = read(os.path.join(os.environ['DFT'],row['system'].lower(),row['bravais'],'strain',str(i),'CONTCAR'), format='vasp')
+        except Exception as e:
+            logger.debug(f"can't load contcar from strained path? {e}")
+            logger.debug("will load poscar file instead")
+            atoms = read(os.path.join(os.environ['DFT'],row['system'].lower(),row['bravais'],'strain',str(i),'POSCAR'), format='vasp')
+        
         post_calc = run_mlp(row['system'],atoms, mlp, device, isif=2)
         vols.append(post_calc[2]/post_calc[0])
         pes.append(post_calc[1]/post_calc[0])
@@ -112,46 +117,46 @@ def strain_vol(row, mlp, device, x=0.157, num_points=15,logger=logger):
     
     return np.asarray(pes,dtype=np.float64), np.asarray(vols,dtype=np.float64)
 
-def run_eos(system, df, mlp, device,x=0.157, num_points=15, logger=logger):
+def run_eos(system, out, mlp, device,x=0.157, num_points=15, logger=logger):
     logger.log("DEBUG", "run_eos FUNC")
     sys_pes = []
     sys_vols = []
-    for row in df.iterrows():
+    for row in out.iterrows():
         row=row[1]
-        path = os.path.join(os.environ['DFT'], system.lower(), row['bravais'])
-        atoms = read(os.path.join(path, 'POSCAR'))
-        atoms = set_mlp(atoms, mlp, device)
-        run_mlp(system, atoms, mlp, device,isif=3, return_results=False)
+        #path = os.path.join(os.environ['DFT'], system.lower(), row['bravais'])
+        #atoms = read(os.path.join(path, 'POSCAR'))
+        #atoms = set_mlp(atoms, mlp, device)
+        #run_mlp(system, atoms, mlp, device,isif=3, return_results=False)
             
         pes, vols = strain_vol(row, mlp=mlp, device=device) 
         sys_pes.append(pes)
         sys_vols.append(vols)
         logger.debug(f"OUTPUTS - pes and vols appended: \n{sys_pes} {sys_vols}")
     
-    df[f'pe-{mlp}'] = sys_pes
-    df[f'vol-{mlp}'] = sys_vols
-    return df
+    out[f'pe-{mlp}'] = sys_pes
+    out[f'vol-{mlp}'] = sys_vols
+    return out
  
 def run_bench(system, mlp='matsim'):
     logger = get_logger(system=system, logfile=f'{system}.{mlp}.log', job= 'mlp')
     device = get_device()
-    df = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
-    df = run_eos(system, df, mlp=mlp, device = device, x=0.157, num_points=15)
-    save_dict(df, (os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')))
+    out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+    out = run_eos(system, out, mlp=mlp, device = device, x=0.157, num_points=15)
+    save_dict(out, (os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')))
 
 
-def run_svn(system, df=None,logger=logger):
+def run_svn(system, out=None,logger=logger):
     logger = get_logger(system=system, logfile=f'{system}.svn.log', job= 'mlp')
     mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
     
     device=get_device()
-    if df is None:
-        df = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+    if out is None:
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     for mlp in mlps:
-        df = run_eos(system=sys.argv[1],df=df,mlp=mlp, device=device) 
-        save_dict(df, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+        out = run_eos(system=sys.argv[1],out=out,mlp=mlp, device=device) 
+        save_dict(out, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
     return
 
 
 if __name__ == '__main__':
-    run_bench(sys.argv[1])
+    run_svn(sys.argv[1])

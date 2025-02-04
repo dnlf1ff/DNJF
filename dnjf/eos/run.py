@@ -5,7 +5,7 @@ import subprocess
 from util import load_conf, load_dict, save_dict, set_env 
 from log import *
 from vasp import *
-from shell import python_job, gpu3_job, python_jobs, job_with_node
+from shell import python_job, gpu3_job, python_jobs, job_with_node, gpu3_jobs
 
 def run_vasp(systems, pbe): # native python or create job
     set_env('eos',pbe=pbe)
@@ -23,8 +23,7 @@ def run_vasp_eos(systems, pbe): # automized
 def post_vasp(systems, pbe): # natvie python or create job
     set_env(task='eos',pbe=pbe)
     for system in systems:
-        # job_with_node(system=system, task='eos', script='vasp.py',argv_=system, partition='gpul',nodelist='n137',run = True)
-        job_with_node(system=system,task='eos',script='mlp.py',argv_=system, partition='gpul',nodelist='n138',run=True)
+        jobs_with_node(system=system,task='eos',script_1='vasp.py', script_2='mlp.py',argv_=system, partition='gpul', nodelist='n138',run=True)
 
 def run_fit(systems, pbe):
     set_env(task='eos', pbe=pbe)
@@ -34,7 +33,8 @@ def run_fit(systems, pbe):
 
 
 if __name__ == '__main__':
-    systems = ['Au','Ag','Al','Ca','Co','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Ni','Os','Pd','Pt','Re','Rb','Rh','Sr','Ti','Ta','V','W','Zn','Zr','Cs'] #Y, Cd
+    systems = ['Ca','Co','Cu','Cd']
+    # systems = ['Au','Ag','Al','Ca','Co','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Ni','Os','Pd','Pt','Re','Rb','Rh','Sr','Ti','Ta','V','W','Zn','Zr','Cs'] #Y, Cd
     pbe = sys.argv[1]
     # post_vasp(systems, pbe)
-    run_fit(systems, pbe)
+    post_vasp(systems, pbe)

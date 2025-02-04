@@ -19,9 +19,13 @@ def clean_df(df, b0 = False):
             rmv.append(col)
     rmv.append('mp_id')
     if b0:
-        rmv.append('del_E')
+        for col in df.columns:
+            if 'del_E' in col:
+                rmv.append(col)
     else:
-        rmv.append('b0')
+        for col in df.columns:
+            if 'b0' in col:
+                rmv.append(col)
     df2=df.drop(columns=rmv,inplace=False)
     df2.reset_index(drop=True,inplace=True)
     return df2

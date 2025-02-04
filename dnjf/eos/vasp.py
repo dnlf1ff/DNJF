@@ -12,6 +12,7 @@ import pandas as pd
 import sys
 from util import *
 from shell import *
+from log import *
 
 def get_system_out(out, system=None, mp_id=None):
     try:
@@ -23,11 +24,14 @@ def get_system_out(out, system=None, mp_id=None):
             mask = out['mp_id'].apply(lambda x: x == mp_id)
     return out[mask]
 
-def write_output(system, inp, return_out=False):
+def write_output(system, inp=None, return_out=False):
+    if inp is None:
+        inp = load_conf()
     path = os.path.join(os.environ['JAR'], f'{system}0.pkl')
     out = pd.DataFrame()
     out['mp_id'] = inp[system]['mp_id']
     out['bravais'] = inp[system]['bravais']
+    out['system'] = [system] * len(out)
     save_dict(data=out, path=path)
     if return_out:
         return out
@@ -133,8 +137,9 @@ def run_eos(system,out=None,logger=logger):
 
 
 def get_vasp_results(system, out=None, return_out=False):
+    logger = get_logger(system, logfile=f'{system}.vasp.log',job='mlp')
     if out is None:
-        out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
     volume_factors = np.linspace(0,15,15)
     vols_dft = []
     pes_dft = []
@@ -166,4 +171,5 @@ def get_vasp_results(system, out=None, return_out=False):
     return
 
 if __name__ == '__main__':
+    write_output(system=sys.argv[1])
     get_vasp_results(system=sys.argv[1])
