@@ -22,19 +22,18 @@ def run_vasp_eos(systems, pbe): # automized
 
 def post_vasp(systems, pbe): # natvie python or create job
     set_env(task='eos',pbe=pbe)
-    for system in systems:
-        jobs_with_node(system=system,task='eos',script_1='vasp.py', script_2='mlp.py',argv_=system, partition='gpul', nodelist='n138',run=True)
+    job_with_node(argv_=systems,task='eos', script='mlp.py', partition='gpu2', nodelist='n014',run=True)
+    #jobs_with_node(system=system,task='eos',script_1='vasp.py', script_2='mlp.py',argv_=system, partition='gpu', nodelist='n008',run=True)
 
 def run_fit(systems, pbe):
     set_env(task='eos', pbe=pbe)
     for system in systems:
-        job_with_node(system=system,task='eos',script='fit.py',argv_=system,  partition='gpul', nodelist='n138',run=True)
+        job_with_node(system=system,task='eos',script='fit.py',argv_=system,  partition='gpul', nodelist='n137',run=True)
 
 
 
 if __name__ == '__main__':
-    systems = ['Ca','Co','Cu','Cd']
+    systems = 'Ca Co Cu Cd Ir Mo Mg Li K'
     # systems = ['Au','Ag','Al','Ca','Co','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Ni','Os','Pd','Pt','Re','Rb','Rh','Sr','Ti','Ta','V','W','Zn','Zr','Cs'] #Y, Cd
     pbe = sys.argv[1]
-    # post_vasp(systems, pbe)
     post_vasp(systems, pbe)

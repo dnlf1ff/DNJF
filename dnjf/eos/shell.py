@@ -175,9 +175,8 @@ python {script_2} {argv_}
 
 
 
-def job_with_node(system, task, script, argv_,  partition, nodelist, output_file=None, return_path=False, run=False):
+def job_with_node(argv_, task, script,  partition, nodelist, output_file=None, return_path=False, run=False):
     if output_file is None:
-        output_file = f'{system}.out.x'
     script = os.path.join(os.environ['DNJF'],'dnjf',task,script) 
     ntasks=get_ntasks(partition)
     
@@ -190,16 +189,19 @@ def job_with_node(system, task, script, argv_,  partition, nodelist, output_file
 #SBATCH --ntasks={ntasks}
 #SBATCH --partition={partition}
 #SBATCH --nodelist={nodelist}
+
 echo "SLRUM_NTASKS: $SLURM_NTASKS"
 if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
     echo "Error: SLRUM_NTASKS is not set or less than or equal to 0"
     exit 1
 fi
 
+echo "running {script} for {argv_} ..."
+
 python {script} {argv_}
 """
     path = os.environ['RUN']
-    job = f"{system.lower()}.sh"
+    job = f"{task}.sh"
 
     with open(os.path.join(path, job), "w") as sbatch_file:
         sbatch_file.write(sbatch_content)
