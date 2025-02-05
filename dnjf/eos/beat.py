@@ -84,10 +84,7 @@ def get_del_tot(systems):
     tot_jar = pd.concat(dfs)
     return tot_jar
 
-def main(pbe):
-    set_env(task='eos',pbe=pbe) 
-    
-    systems = ['Au','Ag','Al','Ca','Co','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Ni','Os','Pd','Pt','Re','Rb','Rh','Sr','Ti','Ta','V','W','Zn','Zr','Cs'] #Y, Cd
+def main(systems):
     mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','mace','matsim']
     tot_b0 = get_b0_tot(systems)
     tot_del = get_del_tot(systems)
@@ -99,6 +96,6 @@ def main(pbe):
     for mlp in mlps:
         scatter_b0(tot_b0, mlp)
         scatter_del_E(tot_del, mlp) 
-        
+#TODO: logger    
 if __name__ == '__main__':
-    main(pbe=sys.argv[1])
+    main(systems = sys.argv[1:])

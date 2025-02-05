@@ -115,16 +115,17 @@ python {script} {argv_}
         return path
     return 
 
-def jobs_with_node(argv_, task, script_1, script_2,  partition, nodelist, job_name=None ,output_file=None, return_path=False, run=False):
+#TODO: listify argv_s
+def inter_env_jobs(argv_, argv_s, task, script, partition, nodelist, job_name=None ,output_file=None, return_path=False, run=False):
     if job_name is None:
         job_name = f'{task}.{os.environ["PBE"]}'
     else:
         job_name = f'{job_name}.{os.environ["PBE"]}'
 
-    script_1 = os.path.join(os.environ['DNJF'],'dnjf',task,script_1) 
-    script_2 = os.path.join(os.environ['DNJF'],'dnjf',task,script_2) 
+    script = os.path.join(os.environ['DNJF'],'dnjf',task,script) 
     ntasks=get_ntasks(partition)
-    gpu_shin = get_gpu(partition) 
+    python_1 = os.path.join('/home/jinvk/.venv', argv_s[0], 'bin', 'python')
+    python_2 = os.path.join('/home/jinvk/.venv', argv_s[1], 'bin', 'python')
     sbatch_content = f"""#!/bin/bash
 #SBATCH --job-name={job_name}
 #SBATCH --output=calc.%j.x
@@ -141,7 +142,63 @@ if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
     exit 1
 fi
 
-{gpu_shin}
+
+echo "running {script} for {argv_} ..."
+
+echo "setting python path to -{python_1}"
+
+{python_1} {script} {argv_} {argv_s[0]}
+
+echo "{script} for {argv_} completed"
+
+echo "now running {script} for {argv_} ..."
+
+echo "...and setting python path to - {python_2}"
+
+{python_2} {script} {argv_} {argv_s[1]}
+echo "{script} for {argv_} done"
+
+"""
+    path = os.environ['RUN']
+    job_name = f'{job_name}.sh'
+    with open(os.path.join(path, job_name), "w") as sbatch_file:
+        sbatch_file.write(sbatch_content)
+    print(f"SBATCH file {job_name} created successfully!")
+    
+    if run:
+        os.chdir(path)
+        subprocess.run(['sbatch',job_name])
+
+    if return_path:
+        return path
+    return
+
+
+def jobs_with_node(argv_, task, script_1, script_2,  partition, nodelist, job_name=None ,output_file=None, return_path=False, run=False):
+    if job_name is None:
+        job_name = f'{task}.{os.environ["PBE"]}'
+    else:
+        job_name = f'{job_name}.{os.environ["PBE"]}'
+
+    script_1 = os.path.join(os.environ['DNJF'],'dnjf',task,script_1) 
+    script_2 = os.path.join(os.environ['DNJF'],'dnjf',task,script_2) 
+    ntasks=get_ntasks(partition)
+    sbatch_content = f"""#!/bin/bash
+#SBATCH --job-name={job_name}
+#SBATCH --output=calc.%j.x
+#SBATCH --error=calc.%j.x
+#SBATCH --time=4:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks={ntasks}
+#SBATCH --partition={partition}
+#SBATCH --nodelist={nodelist}
+
+echo "SLRUM_NTASKS: $SLURM_NTASKS"
+if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
+    echo "Error: SLRUM_NTASKS is not set or less than or equal to 0"
+    exit 1
+fi
+
 
 echo "running {script_1} for {argv_} ..."
 

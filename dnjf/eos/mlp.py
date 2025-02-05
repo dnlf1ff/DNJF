@@ -151,17 +151,13 @@ def run_bench(systems, mlp='matsim'):
         save_dict(out, (os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')))
 
 
-def run_svn(systems, out=None,logger=logger):
+def run_svn(systems, logger=logger):
     for system in systems:
         logger = get_logger(system=system, logfile=f'{system}.svn.log', job= 'mlp')
         mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
         device=get_device()
         logger.info(f'device: {device}')
-        if out is None:
-            try:
-                out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
-            except Exception as e:
-                out = load_dict(os.path.join(os.environ['JAR'], f'{system}0.pkl'))
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
         for mlp in mlps:
             out = run_eos(out=out,mlp=mlp, device=device) 
             save_dict(out, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
@@ -169,4 +165,5 @@ def run_svn(systems, out=None,logger=logger):
 
 
 if __name__ == '__main__':
+    # run_bench(systems=sys.argv[1:-1], mlp=sys.argv[-1])
     run_svn(systems=sys.argv[1:])

@@ -99,17 +99,18 @@ def fit_system(system, mlps, conf=None, out= None, return_out = False, save_out=
         return out
     return
 
-def fit_main(systems, mlps, out=None):
+def fit_main(systems):
+    print('systems:', systems)
+    mlps = ['chgTot','chgTot_l3i3','chgTot_l4i3','chgTot_l3i5','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','m3g_r55','m3g_r6','m3g_n','r5pp','omat_i3pp','omat_i3pp','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','mace','matsim']
     for system in systems:
+        print('system',system)
         logger = get_logger(system, f'{system}.fit.log',job='fit')
-        if out is None:
-            out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
-            out_s = [out.drop(i) for i in range(3)]
-            for out_ in out_s:
-                out_ = comrade(system, out_, mlps)
-                fit_system(system, mlps, out=out_)
+        out = load_dict(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+        out_s = [out.drop(i) for i in range(3)]
+        for out_ in out_s:
+            out_ = comrade(system, out_, mlps)
+            fit_system(system, mlps, out=out_)
 
 if __name__ == '__main__':
-    mlps = ['chgTot','chgTot_l3i3','chgTot_l4i3','chgTot_l3i5','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','m3g_r55','m3g_r6','m3g_n','r5pp','omat_i3pp','omat_i3pp','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','mace','matsim']
-    fit_main(system=sys.argv[1], mlps=mlps)
+    fit_main(systems=sys.argv[1:])
 
