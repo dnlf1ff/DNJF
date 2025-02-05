@@ -15,8 +15,8 @@ from shell import *
 
 
 def concat_potcar(path):
-    subprocess.run(['cp', os.path.join(os.environ['PBE'],'cu','POTCAR'), os.path.join(path,'POTCAR.cu')])
-    subprocess.run(['cp', os.path.join(os.environ['PBE'],'au','POTCAR'), os.path.join(path,'POTCAR.au')])
+    subprocess.run(['cp', os.path.join(os.environ['POTPAW'],'cu','POTCAR'), os.path.join(path,'POTCAR.cu')])
+    subprocess.run(['cp', os.path.join(os.environ['POTPAW'],'au','POTCAR'), os.path.join(path,'POTCAR.au')])
     with open(os.path.join(path, 'POTCAR'), 'wb') as potcar:
         for fname in [os.path.join(path, 'POTCAR.cu'), os.path.join(path, 'POTCAR.au')]:
             with open(fname, 'rb') as infile:
@@ -30,7 +30,7 @@ def write_inputs(system, logger=logger):
     orig_inputs = result['orig_inputs']
     path = make_dir(os.path.join(os.environ['DFT'], system.lower()), return_path=True)
     if len(system) < 3: 
-        subprocess.run(['cp', os.path.join(os.environ['PBE'],system.lower(),'POTCAR'), os.path.join(path,'POTCAR')])
+        subprocess.run(['cp', os.path.join(os.environ['POTPAW'],system.lower(),'POTCAR'), os.path.join(path,'POTCAR')])
     else:
         concat_potcar(path)
     
@@ -40,14 +40,13 @@ def write_inputs(system, logger=logger):
     incar=Incar(inputs['incar'])
     kpoints = Kpoints.from_dict(orig_inputs['kpoints'])
     poscar = Poscar(Structure.from_dict(inputs['structure']))
-    incar = mod_incar(incar, system)    
-    incar.write_file(os.path.join(path, 'INCAR'))
+    incar = mod_incar(incar, system,path=path)    
     kpoints.write_file(os.path.join(path, 'KPOINTS'))
     poscar.write_file(os.path.join(path, 'POSCAR'))
 
 def vasp_relax(system, partition):
     path = os.path.join(os.environ['DFT'], system.lower())
-    vasp_job(system=system, path=path, partition=partition, return_path=False, run=True)
+    vasp_job(system=system, path=path, partition=partition, return_path=False, run=False)
 
 
 def write_out(binary_system, systems, return_out = False):
@@ -82,11 +81,11 @@ def get_vasp_results(binary_system, systems, out=None, return_out=False):
         return out
     return
 
-def mod_incar(incar_pre, system, path,isif=3, return_incar=False)
+def mod_incar(incar_pre, system, path,isif=3, return_incar=False):
     incar = incar_pre
     if isif == 2:
         incar = Incar.from_file(incar_pre)
-        incar['ADDGRID'] = '/TRUE/'
+        incar['ADDGRID'] = '.TRUE.'
     incar['ISIF'] = isif 
     incar['LREAL'] = '.FALSE.'
     incar['LWAVE'] = '.FALSE.'
@@ -103,7 +102,7 @@ def mod_incar(incar_pre, system, path,isif=3, return_incar=False)
         return incar
     return
 
-def propagate_vasp(path_in, path_out, system, poscar=None, partition='jinvk', run=True):
+def propagate_vasp(path_in, path_out, system, poscar=None, incar=None, partition='jinvk', run=True):
     kpoints = os.path.join(path_in, 'KPOINTS')
     if poscar is None:
         poscar = os.path.join(path_in, 'CONTCAR')
@@ -111,40 +110,45 @@ def propagate_vasp(path_in, path_out, system, poscar=None, partition='jinvk', ru
     subprocess.run(['cp', kpoints, os.path.join(path_out, 'KPOINTS')])
     subprocess.run(['cp', poscar, os.path.join(path_out, 'POSCAR')])
     subprocess.run(['cp', potcar, os.path.join(path_out, 'POTCAR')])
+    if incar is not None:
+        incar = os.path.join(path, incar)
+        subprocess.run(['cp', incar, os.path.join(path_out, 'INCAR')])
     if run:
         vasp_job(system, path=path_out, partition=partition, run=run)
 
 
 def rabbit_phonons(system, phonon_path, partition, run=True):
     os.chdir(phonon_path)
-    disp_list = []
-    for d in os.listdir():
-        if 'POSCAR-' in d and d is not os.path.isdir(d):
-            disp_list.append(d)
-    for i in range(1, len(disp_list)+1):
+    poscar_list = []
+    for f in os.listdir():
+        if 'POSCAR-' in f and f is not os.path.isdir(d):
+            poscar_list.append(d)
+    for i in range(1, len(poscar_list)+1):
         disp_dir = f"disp-{i}"
-        propagate_vasp(path_in =phonon_path, path_out = os.path.join(phonon_path, f'disp_{i}'), system, poscar = disp_list[i-1], partition=partition, run=True)
+        propagate_vasp(path_in =phonon_path, path_out = os.path.join(phonon_path, f'disp_{i}'), system=system, poscar = poscar_list[i-1], incar='INCAR',partition=partition, run=False)
         os.chdir(phonon_path)
         poscars = make_dir(os.path.join(phonon_path, 'poscars'), return_path=True)
-        subprocess.run(['mv', disp_list[-1], poscars])
+        subprocess.run(['mv', poscar_list[-1], poscars])
 
 
-def baby_phonons(row):
+def baby_phonons(row, return_path=True):
     path = os.path.join(os.environ['DFT'],row['system'])
     phonon_path = make_dir(os.path.join(os.environ['DFT'], row['system'], 'phonon'), return_path=True)
-    mod_incar(os.path.join(path, 'INCAR'), system=row['system'], path=
-    os.path.join(incar_pre, system=row['system'], path=phonon_path, isif=2)
+    mod_incar(os.path.join(path, 'INCAR'), system=row['system'], path=phonon_path, isif=2)
     propagate_vasp(path_in = path, path_out = phonon_path, system=row['system'], run=False)
     
     os.chdir(phonon_path)
     subprocess.run(['phono3py', '-d', '--dim', '2 2 2', '-c', 'POSCAR', '-pa','auto'])
-
+    if return_path:
+        return phonon_path
+    return
 
 def run_phonon(binary_system, out=None):
-   if out is None:
+    if out is None:
         out = load_dict(os.path.join(os.environ['JAR'], f'{binary_system.lower()}.pkl'))
     for i, row in out.iterrows():
-
+        phonon_path = baby_phonons(row)
+        rabit_phonons(row['system'], phonon_path,partition='jinvk',run=False) 
 
 
 if __name__ == '__main__':

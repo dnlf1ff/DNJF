@@ -14,6 +14,9 @@ import pickle
 
 import torch
 
+def get_systems(binary_system):
+    if 'cu' in binary_system.lower() and 'au' in binary_system.lower():
+        systems = ['Cu','Au','CuAu','Cu3Au','CuAu3' ]
 
 def get_device(return_device = True):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,6 +32,7 @@ def set_env(task,pbe):
     os.environ['API_KEY'] = 'tUCZf2SGk3XSAc8Jpqb12c3Q8Ve8230O'
     os.environ['HOME'] = '/home/jinvk'
     os.environ['DNJF'] = os.path.join(os.environ['HOME'],'DNJF')
+    os.environ['BARK'] = os.path.join(os.environ['HOME'], 'BARK')
     os.environ['TASK'] =make_dir(os.path.join(os.environ['HOME'], task, str(pbe)),return_path=True)
     os.environ['DFT'] = make_dir(os.path.join(os.environ['TASK'], 'dft'), return_path=True)
     os.environ['OUT'] = make_dir(os.path.join(os.environ['TASK'], 'out'), return_path=True)
@@ -39,10 +43,11 @@ def set_env(task,pbe):
     os.environ['SQS'] = make_dir(os.path.join(os.environ['TASK'],'sqs'), return_path=True)
     os.environ['RUN'] = make_dir(os.path.join(os.environ['TASK'],'run'), return_path=True)
 
-    os.environ['PBE'] = os.path.join(os.environ['DNJF'],'potpaw',str(pbe))
-    os.environ['MLP'] = os.path.join(os.environ['DNJF'], 'mlp')
-    os.environ['CONFIG'] = os.path.join(os.environ['DNJF'],'config',task)
-    os.environ['JOB'] = os.path.join(os.environ['DNJF'], 'jobs')
+    os.environ['PBE'] = str(pbe)
+    os.environ['POTPAW'] = os.path.join(os.environ['BARK'],'potpaw',str(pbe))
+    os.environ['MLP'] = os.path.join(os.environ['BARK'], 'mlp')
+    os.environ['CONFIG'] = os.path.join(os.environ['BARK'],'config',task)
+    os.environ['JOB'] = os.path.join(os.environ['BARK'], 'jobs')
 
 def make_dir(path, return_path = False):
     os.makedirs(path, exist_ok=True)
