@@ -24,7 +24,6 @@ def get_gpu(partition):
         return 'echo "GPU DEVICE not allotcated"' 
 
 
-
 def gpu3_jobs(argv_,task, script_1, script_2,  partition='gpu3', job_name=None, return_path=False, run=False):
     if job_name is None:
         job_name = task
@@ -116,16 +115,39 @@ python {script} {argv_}
     return 
 
 #TODO: listify argv_s
+
+def listify(argv_, script, argv_s):
+    nenvs = len(argv_s)
+    pythons = [os.path.join('/home/jinvk/.venv',argv,'bin','python') for argv in argv_s]
+    job_sh = f'\n
+echo "running {script} for {argv_} ..."\n\n
+
+python {script} {argv_}\n\n
+echo "{script} for svn potentials done"\n\n
+
+echo "setting python path to -{pythons[0]}"\n\n
+
+{pythons[0]} {script} {argv_} {argv_s[0]}\n\n
+
+echo "{script} for {argv_} completed"\n\n
+
+echo "now running {script} for {argv_} ..."\n\n
+
+echo "...and setting python path to - {pythons[1]}"\n\n
+
+{pythons[1]} {script} {argv_} {argv_s[1]}\n\n
+
+echo "{script} for {argv_} done"\n\n'
+    return job_sh
+
 def inter_env_jobs(argv_, argv_s, task, script, partition, nodelist, job_name=None ,output_file=None, return_path=False, run=False):
     if job_name is None:
         job_name = f'{task}.{os.environ["PBE"]}'
     else:
         job_name = f'{job_name}.{os.environ["PBE"]}'
-
     script = os.path.join(os.environ['DNJF'],'dnjf',task,script) 
     ntasks=get_ntasks(partition)
-    python_1 = os.path.join('/home/jinvk/.venv', argv_s[0], 'bin', 'python')
-    python_2 = os.path.join('/home/jinvk/.venv', argv_s[1], 'bin', 'python')
+    job_sh = listify(argv_, script, argv_s) 
     sbatch_content = f"""#!/bin/bash
 #SBATCH --job-name={job_name}
 #SBATCH --output=calc.%j.x
@@ -142,21 +164,7 @@ if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
     exit 1
 fi
 
-
-echo "running {script} for {argv_} ..."
-
-echo "setting python path to -{python_1}"
-
-{python_1} {script} {argv_} {argv_s[0]}
-
-echo "{script} for {argv_} completed"
-
-echo "now running {script} for {argv_} ..."
-
-echo "...and setting python path to - {python_2}"
-
-{python_2} {script} {argv_} {argv_s[1]}
-echo "{script} for {argv_} done"
+{job_sh}
 
 """
     path = os.environ['RUN']
