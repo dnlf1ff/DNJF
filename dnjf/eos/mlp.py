@@ -3,7 +3,7 @@ from ase.io.trajectory import Trajectory
 from ase.io import read, write
 from ase.optimize import FIRE 
 from ase.constraints import UnitCellFilter
-
+import sys
 import copy
 import gc
 from loguru import logger
@@ -11,7 +11,8 @@ import numpy as np
 import os
 import pandas as pd
 
-from util import load_dict, save_dict, get_device()
+from vasp import write_out, get_vasp_result
+from util import load_dict, save_dict, get_device
 from log import get_logger 
 
 def set_mlp(atoms, mlp, device, return_calc=False,logger=logger):
@@ -34,31 +35,31 @@ def set_mlp(atoms, mlp, device, return_calc=False,logger=logger):
         return atoms, calculator
     return atoms
 
-def run_mlp(atoms, mlp, device, isif=3, return_results = True,logger=logger):
-    system = str(atoms.symbols).lower()
+def run_mlp(system, atoms, mlp, device, isif=3, return_results = True,logger=logger):
     logger.log("DEBUG", "run_mlp FUNC")
     atoms = set_mlp(atoms, mlp, device)
     calculation_type='relaxation'
     if isif == 2:
         filtered = UnitCellFilter(atoms, mask = [False]*6, constant_volume=True)
         calculation_type='static calculation'
-    optimizer = FIRE(filtered, logfile=os.path.join(os.environ['LOG'],'mlp',system.lower(),f'{system.lower()}.{mlp}.ase'), trajectory=os.path.join(os.environ['TRAJ'],f'{system}.{mlp}.traj'))
     
+    optimizer = FIRE(filtered, logfile=os.path.join(os.environ['LOG'],'mlp',f'{system.lower()}.{mlp}.ase'), trajectory=os.path.join(os.environ['TRAJ'],f'{system}.{mlp}.traj'))
     optimizer.run(fmax=0.00001)
     natoms=len(atoms)
-    pe = atoms.get_potential_energy(force_consistent=True)
-    vol = atoms.get_volume()
+    pe = atoms.get_potential_energy(force_consistent=True)/natoms
+    vol = atoms.get_volume()/natoms
     force = atoms.get_forces()
     stress = atoms.get_stress()/GPa
     logger.debug(f"OUTPUT {calculation_type} with ase calculator - {natoms} {pe} {vol} {stress} {force}")
 
     if return_results:
-        return len(atoms), pe, vol, force, stress
+        return pe, vol, force, stress
     return
 
 def strain_vol(row, mlp, device, x=0.157, num_points=15,logger=logger):
     logger.log("DEBUG", "strain_vol FUNC")
     volume_factors = np.arange(0,15,1)
+    system=row['system']
     pes, vols, forces, stress_s = [], [], [], []
     for i in volume_factors:
         logger.debug(f"STRAIN {i}th strain applied ...")
@@ -68,11 +69,11 @@ def strain_vol(row, mlp, device, x=0.157, num_points=15,logger=logger):
             logger.debug(f"can't load contcar from strained path? {e}")
             logger.debug("will load poscar file instead")
             atoms = read(os.path.join(os.environ['DFT'],row['system'].lower(),row['bravais'],'strain',str(i),'POSCAR'), format='vasp')
-        post_calc = run_mlp(row['system'],atoms, mlp, device, isif=2)
-        vols.append(post_calc[2]/post_calc[0])
-        pes.append(post_calc[1]/post_calc[0])
-        forces.append(post_calc[3])
-        stress_s.append(post_calc[4])
+        post_calc = run_mlp(system, atoms, mlp, device, isif=2)
+        vols.append(post_calc[1])
+        pes.append(post_calc[0])
+        forces.append(post_calc[2])
+        stress_s.append(post_calc[3])
         logger.debug(f"post_calc: {post_calc}")
 
         del atoms
@@ -84,7 +85,7 @@ def run_eos(system, mlp, device,x=0.157, num_points=15, logger=logger):
     logger.log("DEBUG", "run_eos FUNC")
     out = load_dict(os.path.join(os.environ['JAR'], f'{system}_mlp.pkl'))
     sys_pes, sys_vols, sys_forces, sys_stress_s = [], [], [], []
-    for _, row in out.iterrows():
+    for i, row in out.iterrows():
         pes, vols, forces, stress_s = strain_vol(row, mlp=mlp, device=device) 
         sys_pes.append(pes)
         sys_vols.append(vols)
@@ -100,11 +101,15 @@ def pray(mlp):
     device = get_device()
     systems = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr']
     for system in systems:
-        logger = get_logger(system=system, logfile=f'{system}.{mlp}.log', job= 'mlp')
-        logger.info(f'device: {device}')
-        out = run_eos(system=system,mlp=mlp, device=device) 
+        logger = get_logger(system=system, logfile=f'{system}.upper().{mlp}.log', job= 'mlp')
+        logger.info(f"DEVICE: {device}")
+        if not os.path.exists(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')):
+            logger.info(f"collecting DFT results for {system}")
+            write_out(system)
+            get_vasp_result(system)
+        out = run_eos(system=system,mlp=mlp, device=device, logger=logger) 
         save_dict(out, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
-        del out
+        del out, logger
         gc.collect()
     return
 

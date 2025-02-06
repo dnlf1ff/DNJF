@@ -1,44 +1,32 @@
 from ase.io import read
 import copy
 from mp_api.client import MPRester
-from loguru import logger
 import numpy as np
 import shutil
 import subprocess
-from pymatgen.io.vasp import Incar, Kpoints, Poscar, Outcar, Potcar
+from pymatgen.io.vasp import Incar, Kpoints, Poscar, Vasprun
 from pymatgen.core import Structure
 import os
 import pandas as pd
 import sys
-from util import *
-from shell import *
-from log import *
+from util import load_conf, make_dir, load_dict, save_dict 
+from shell import vasp_job 
+from log import get_logger 
 
-def get_system_out(out, system=None, mp_id=None):
-    try:
-        mask = out['formula_pretty'].apply(lambda x: system in x)
-    except:
-        if mp_id is None:
-            mask = out['system'].apply(lambda x: system in x)
-        else:
-            mask = out['mp_id'].apply(lambda x: x == mp_id)
-    return out[mask]
-
-def write_outs(systems, inp=None, return_out=False):
-    for system in systems:
-        if inp is None:
-            inp = load_conf()
-        path = os.path.join(os.environ['JAR'], f'{system}0.pkl')
-        out = pd.DataFrame()
-        out['mp_id'] = inp[system]['mp_id']
-        out['bravais'] = inp[system]['bravais']
-        out['system'] = [system] * len(out)
-        save_dict(data=out, path=path)
+def write_out(system, inp=None, return_out=False):
+    if inp is None:
+        inp = load_conf()
+    path = os.path.join(os.environ['JAR'], f'{system}0.pkl')
+    out = pd.DataFrame()
+    out['mp_id'] = inp[system]['mp_id']
+    out['bravais'] = inp[system]['bravais']
+    out['system'] = [system] * len(out)
+    save_dict(data=out, path=path)
     if return_out:
         return out
     return
 
-def write_inputs(systems, out=None, check_potpaw=True,logger=logger):
+def write_inputs(system, logger, out=None, check_potpaw=True):
     for system in systems:
         if out is None:
             out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
@@ -125,7 +113,7 @@ def strain_vol(system, system_path, x=0.157, num_points=15):
             subprocess.run(['chmod','-w','POTCAR'], cwd=strain_path)
             subprocess.run(['chmod','+x','POTCAR'], cwd=strain_path)
 
-def run_eos(system,out=None,logger=logger):
+def run_eos(system,logger, out=None):
     if out is None:
         out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl')) 
     for i, row in out.iterrows():
@@ -138,40 +126,47 @@ def run_eos(system,out=None,logger=logger):
         subprocess.run(['sbatch', 'run-eos.sh'], cwd=system_strain_path)
 
 
-def get_vasp_results(systems, out=None, return_out=False):
-    for system in systems:
-        logger = get_logger(system, logfile=f'{system}.vasp.log',job='mlp')
-        if out is None:
-            out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
-        volume_factors = np.linspace(0,15,15)
-        vols_dft = []
-        pes_dft = []
-        for row in out.iterrows():
-            row=row[1]
-            path = os.path.join(os.environ['DFT'], system.lower(), row['bravais'],'strain')
-            vols = []
-            pes = []
-            for i, factor in enumerate(volume_factors):
-                strain_path = os.path.join(path, str(i))
-                logger.log("INFO",f"strain_path : {strain_path}")
-                o = Outcar(os.path.join(strain_path, "OUTCAR"))
-                a = read(os.path.join(strain_path,'POSCAR'))
-                
-                vols.append(a.get_volume()/len(a))
-                pes.append(o.final_fr_energy/len(a))
-                logger.log("INFO",f"{i}th volume: {a.get_volume()/len(a)}") 
-                logger.log("INFO",f"{i}th pe: {o.final_fr_energy/len(a)}")
-                logger.log("INFO", f"appended volumes: {vols}")
-                logger.log("INFO",f"appended pes: {pes}")
-            vols_dft.append(np.asarray(vols, dtype=np.float64))
-            pes_dft.append(np.asarray(pes, dtype=np.float64))
-        out['pe-dft'] = pes_dft
-        out['vol-dft'] = vols_dft
-        save_dict(out, path=os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+def get_vasp_result(system, return_out=False):
+    logger = get_logger(system, logfile=f'{system}.vasp.log',job='mlp')
+    out = load_dict(os.path.join(os.environ['JAR'],f'{system}0.pkl'))
+    volume_factors = np.linspace(0,15,15)
+    nions_dft, pes_dft, vols_dft, forces_dft, stress_dft= [], [], [], [], []
+    for _, row in out.iterrows():
+        path = os.path.join(os.environ['DFT'], system.lower(), row['bravais'],'strain')
+        pes, vols, forces, stress_s = [], [], [], []
+        for i, factor in enumerate(volume_factors):
+            strain_path = os.path.join(path, str(i))
+            logger.log("INFO",f"strain_path : {strain_path}")
+            vasprun = Vasprun(os.path.join(strain_path, 'vasprun.xml'))
+            fin_structure=vasprun.final_structure
+            ionic_step=vasprun.ionic_steps[-1]
+            pe = ionic_step['e_fr_energy']
+            vol = fin_structure.lattice.volume
+            stress = np.asarray(ionic_step['stress'])
+            force = np.asarray(ionic_step['stress'])
+            nion = fin_structure.num_sites
+            forces.append(force)
+            pes.append(pe/nion)
+            vols.append(vol/nion)
+            stress_s.append(stress)
+            
+            logger.log("INFO",f"{i}th volume: {vol}") 
+            logger.log("INFO",f"{i}th pe: {pe}")
+            logger.log("INFO",f"{i}th stress: {stress}")
+            logger.log("INFO",f"{i}th force: {force}")
+        nions_dft.append(nion)
+        vols_dft.append(np.asarray(vols))
+        pes_dft.append(np.asarray(pes))
+        forces_dft.append(np.asarray(forces))
+        stress_dft.append(np.asarray(stress_s))
+    out[f'pe-dft'] = pes_dft 
+    out[f'vol-dft'] = vols_dft 
+    out[f'force-dft'] = forces_dft 
+    out[f'stress-dft'] = stress_dft 
+    save_dict(out, os.path.join(os.environ['JAR'], f'{system}_mlp.pkl'))
     if return_out:
         return out
     return
 
 if __name__ == '__main__':
-    write_outs(systems=sys.argv[1:])
-    get_vasp_results(systems=sys.argv[1:])
+    'winston'
