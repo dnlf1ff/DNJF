@@ -119,7 +119,25 @@ python {script} {argv_}
 def listify(argv_, script, argv_s):
     nenvs = len(argv_s)
     pythons = [os.path.join('/home/jinvk/.venv',argv,'bin','python') for argv in argv_s]
-    job_sh = f'\necho "running {script} for {argv_} ..."\n\npython {script} {argv_}\n\necho "{script} for svn potentials done"\n\necho "setting python path to -{pythons[0]}"\n\n{pythons[0]} {script} {argv_} {argv_s[0]}\n\necho "{script} for {argv_} completed"\n\necho "now running {script} for {argv_} ..."\n\necho "...and setting python path to - {pythons[1]}"\n\n{pythons[1]} {script} {argv_} {argv_s[1]}\n\necho "{script} for {argv_} done"\n\n'
+    job_sh = f'\n
+echo "running {script} for {argv_} ..."\n\n
+
+python {script} {argv_}\n\n
+echo "{script} for svn potentials done"\n\n
+
+echo "setting python path to -{pythons[0]}"\n\n
+
+{pythons[0]} {script} {argv_} {argv_s[0]}\n\n
+
+echo "{script} for {argv_} completed"\n\n
+
+echo "now running {script} for {argv_} ..."\n\n
+
+echo "...and setting python path to - {pythons[1]}"\n\n
+
+{pythons[1]} {script} {argv_} {argv_s[1]}\n\n
+
+echo "{script} for {argv_} done"\n\n'
     return job_sh
 
 def inter_env_jobs(argv_, argv_s, task, script, partition, nodelist, job_name=None ,output_file=None, return_path=False, run=False):
