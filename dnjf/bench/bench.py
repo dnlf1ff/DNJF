@@ -6,11 +6,14 @@ import pandas as pd
 import pickle
 from sevenn.calculator import SevenNetCalculator
 import sys
-from util import save_dict, set_env
+from util import save_dict, set_env, load_dict
 from plot import scatter
+import gc
+
 kBar = 1602.1766208
 
 def get_calc(mlp):
+    print(f'\n\nrunning with {mlp}\n\n')
     calc = SevenNetCalculator(os.path.join(os.environ['MLP'],mlp,'checkpoint_best.pth'))
     return calc 
 
@@ -27,6 +30,8 @@ def run_mlp(atoms, name, mlp):
         forces.append((force := atom.get_forces()))
         stresses.append((stress := -atom.get_stress()*kBar))
         print(f'nion: {nion}, pe: {pe}, vol: {vol}, force: {force}, stress: {stress}\n')
+    del calc
+    gc.collect()
     return pes, vols, forces, stresses
 
 def run_vasp(atoms, name):
@@ -44,11 +49,14 @@ def run_vasp(atoms, name):
     return nions, pes, vols, forces, stresses
 
 
-def run_n_save(atoms, name, mlp):
-    print(f'running {name} -- vasp')
-    nions, pes, vols, forces, stresses = run_vasp(atoms, name)
-    out = pd.DataFrame({'nion': nions, 'pe-dft': pes, 'vol-dft': vols, 'force-dft': forces, 'stress-dft': stresses})
-    save_dict(out, os.path.join(os.environ['JAR'], f'{name}.pkl'))
+def run_system(atoms, name, mlp):
+    if os.path.isfile(os.path.join(os.environ['JAR'],f'{name}.pkl')):
+        out = load_dict(os.path.join(os.environ['JAR'], f'{name}.pkl'))
+    else:
+        print(f'running {name} -- vasp')
+        nions, pes, vols, forces, stresses = run_vasp(atoms, name)
+        out = pd.DataFrame({'nion': nions, 'pe-dft': pes, 'vol-dft': vols, 'force-dft': forces, 'stress-dft': stresses})
+        save_dict(out, os.path.join(os.environ['JAR'], f'{name}.pkl'))
     
     print(f'running {name} -- {mlp}')
     pes, vols, forces, stresses = run_mlp(atoms, name, mlp)
@@ -58,9 +66,26 @@ def run_n_save(atoms, name, mlp):
     out[f'stress-{mlp}'] = stresses
     save_dict(out, os.path.join(os.environ['JAR'], f'{name}.pkl'))
     scatter(out, 'pe', name, mlp)
+    scatter(out, 'force', name, mlp)
+    scatter(out, 'stress', name, mlp)
     print(f'saved outputs')
+    del out
+    gc.collect()
+
+def run_mlps():
+    set_env(task='bench')
+    # mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4', 'omat_ft_r5', 'f5pp']
+    atoms = read(os.path.join(os.environ['CONF'], f'W_{sys.argv[1]}_train.xyz'), index=':')
+    for mlp in mlps:
+        run_system(atoms, name = f'W_{sys.argv[1]}', mlp = mlp)   
+
+ 
 
 if __name__ == '__main__':
-    set_env(task='bench')
-    atoms = read(os.path.join(os.environ['CONF'], f'W_{sys.argv[1]}_nequip_train.xyz'), index=':')
-    run_n_save(atoms, name = f'W_{sys.argv[1]}', mlp = sys.argv[2])   
+    run_mlps()
+
+
+
+
+
+

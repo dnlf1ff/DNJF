@@ -23,7 +23,7 @@ def get_mpr():
     mpr = MPRester(api_key = os.environ['API_KEY'], use_document_model=False)
     return mpr
 
-def set_env(task,pbe, prefix='.gk'):
+def set_env(task,pbe, prefix='.dlfjs'):
     os.environ['API_KEY'] = 'tUCZf2SGk3XSAc8Jpqb12c3Q8Ve8230O'
     os.environ['HOME'] = os.path.join('/home/jinvk', prefix)
     os.environ['DNJF'] = os.path.join(os.environ['HOME'],'DNJF')
@@ -42,8 +42,6 @@ def set_env(task,pbe, prefix='.gk'):
     os.environ['MLP'] = os.path.join(os.environ['BARK'], 'mlp')
     os.environ['CONF'] = os.path.join(os.environ['DNJF'],'config',task)
     os.environ['JOB'] = os.path.join(os.environ['BARK'], 'jobs')
-    os.environ['MLPS'] = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4']
-    os.environ['SYSTEMS'] = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr']
 
 def make_dir(path, return_path = True):
     os.makedirs(path, exist_ok=True)
