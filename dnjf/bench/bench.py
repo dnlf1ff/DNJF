@@ -8,15 +8,16 @@ from sevenn.calculator import SevenNetCalculator
 import sys
 from util import save_dict, set_env
 from plot import scatter
+kBar = 1602.1766208
 
 def get_calc(mlp):
     calc = SevenNetCalculator(os.path.join(os.environ['MLP'],mlp,'checkpoint_best.pth'))
     return calc 
 
-def mlp(atoms, name, mlp):
+def run_mlp(atoms, name, mlp):
     calc = get_calc(mlp)
     print(f'running {name}')
-    pes, vols, forces, stresses = [], [], [], [], []
+    pes, vols, forces, stresses = [], [], [], []
     for i, atom in enumerate(atoms):
         print('\nrunning', i)
         nion = len(atom)
@@ -24,11 +25,11 @@ def mlp(atoms, name, mlp):
         pes.append((pe := atom.get_potential_energy(force_consistent=True)/nion))
         vols.append((vol := atom.get_volume()/nion))
         forces.append((force := atom.get_forces()))
-        stresses.append((stress := atom.get_stress()/GPa))
+        stresses.append((stress := -atom.get_stress()*kBar))
         print(f'nion: {nion}, pe: {pe}, vol: {vol}, force: {force}, stress: {stress}\n')
     return pes, vols, forces, stresses
 
-def vasp(atoms, name):
+def run_vasp(atoms, name):
     print(f'running {name}')
     nions, pes, vols, forces, stresses = [], [], [], [], []
     for i, atom in enumerate(atoms):
@@ -37,7 +38,7 @@ def vasp(atoms, name):
         pes.append((pe := atom.get_potential_energy()/nion))
         vols.append((vol := atom.get_volume()/nion))
         forces.append((force := atom.get_forces()))
-        stresses.append((stress := atom.get_stress()/GPa))
+        stresses.append((stress := -atom.get_stress()*kBar))
         nions.append(nion)
         print(f'nion: {nion}, pe: {pe}, vol: {vol}, force: {force}, stress: {stress}\n')
     return nions, pes, vols, forces, stresses
@@ -45,14 +46,12 @@ def vasp(atoms, name):
 
 def run_n_save(atoms, name, mlp):
     print(f'running {name} -- vasp')
-    nions, pes, vols, forces, stresses = vasp(atoms, name)
-    nions, pes, vols, forces, stresses = mlp(atoms, name)
+    nions, pes, vols, forces, stresses = run_vasp(atoms, name)
     out = pd.DataFrame({'nion': nions, 'pe-dft': pes, 'vol-dft': vols, 'force-dft': forces, 'stress-dft': stresses})
-    save_dict(out, os.path.join(bench_dir, f'{name}.pkl'))
+    save_dict(out, os.path.join(os.environ['JAR'], f'{name}.pkl'))
     
     print(f'running {name} -- {mlp}')
-    pes, vols, forces, stresses = mlp(atoms, name)
-    out = pd.DataFrame({'nion': nions, 'pe': pes, 'vols': vols, 'forces': forces, 'stress': stresses})
+    pes, vols, forces, stresses = run_mlp(atoms, name, mlp)
     out[f'pe-{mlp}'] = pes
     out[f'vol-{mlp}'] = vols
     out[f'force-{mlp}'] = forces
@@ -63,5 +62,5 @@ def run_n_save(atoms, name, mlp):
 
 if __name__ == '__main__':
     set_env(task='bench')
-    atoms = read(os.path.join(os.environ['CONFIG'], f'W_{sys.argv[1]}_nequip_train.xyz'), index=':')
+    atoms = read(os.path.join(os.environ['CONF'], f'W_{sys.argv[1]}_nequip_train.xyz'), index=':')
     run_n_save(atoms, name = f'W_{sys.argv[1]}', mlp = sys.argv[2])   

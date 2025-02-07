@@ -16,8 +16,4 @@ if [ -z "$SLURM_NTASKS" ] || [ "$SLURM_NTASKS" -le 0 ]; then
 fi
 
 python bench.py cold chgTot
-python bench.py cold omat_i5pp
 python bench.py warm chgTot
-python bench.py warm omat_i5pp 
-
-

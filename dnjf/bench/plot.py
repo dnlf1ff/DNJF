@@ -5,18 +5,23 @@ from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, m
 from util import make_dir 
 
 def scatter(out, prop, name, mlp): #TODO: group with elements
-    rcParams['font.family'] = 'Arial' 
-    mlp = out[f'{prop}-{mlp}']
-    dft = out[f'{prop}-dft'] 
-    mae = mean_absolute_error(out[f'{prop}-dft'],out[f'{prop}-{mlp}'])
-    r2 = r2_score(out[f'{prop}-dft'],out[f'{prop}-{mlp}']) 
+    rcParams['font.family'] = 'Arial'
+    if prop == 'force':
+        dft_out, mlp_out = force_be(out, mlp)
+    elif prop == 'stress':
+        dft_out, mlp_out = may_the(out, mlp)
+    else:
+        mlp_out = out[f'{prop}-{mlp}']
+        dft_out = out[f'{prop}-dft'] 
+    mae = mean_absolute_error(dft_out, mlp_out)
+    r2 = r2_score(dft_out, mlp_out) 
 
     fig, axs = plt.subplots(figsize=(6.5,6.5))
     axs.set_title(mlp, loc='right',fontsize=20, fontweight='bold', pad=10)
     
     axs.plot(x,y,color = "#78a5bf", linestyle='--', linewidth=2, zorder=1)
     
-    axs.scatter(out[f'{prop}-dft'],out[f'{prop}-{mlp}'],color='#202c7c', marker='o', edgecolors='k', s=5, alpha=0.8, zorder=3)
+    axs.scatter(dft_out, mlp_out,color='#202c7c', marker='o', edgecolors='k', s=10, alpha=1, zorder=2)
     
     axs.set_ylabel("MLP energy (ev/atom)", fontsize=19, labelpad=0, fontweight='bold')
     axs.set_xlabel('DFT energy (ev/atom)', fontsize=17, labelpad=-1, fontweight='bold') 
@@ -36,3 +41,19 @@ def scatter(out, prop, name, mlp): #TODO: group with elements
     
     fig.savefig(os.path.join(os.environ['PLOT'],f'{name}.{prop}_{mlp}.png'))
     plt.close(fig)
+
+
+def may_the(out, mlp):
+    dft_stress, mlp_stress = out['stress-dft'], out[f'stress-{mlp}'] 
+    dft_stress, mlp_stress = np.concatenate([s for s in dft_stress]), np.concatenate([s for s in mlp_stress])
+    return dft_stress, mlp_stress
+
+def force_be(out, mlp):
+    dft_forces, mlp_forces = out['force-dft'], out[f'force-{mlp}']
+    dft_forces, mlp_forces = np.stack([f for f in dft_forces]), np.stack([f for f in mlp_forces])
+    x_mlp, y_mlp, z_mlp = np.concatenate([f[0] for f in mlp_forces]),np.concatenate([f[1] for f in mlp_forces]),np.concatenate([f[2] for f in mlp_forces])
+    x_dft, y_dft, z_dft = np.concatenate([f[0] for f in dft_forces]),np.concatenate([f[1] for f in dft_forces]),np.concatenate([f[2] for f in dft_forces])
+    dft_force = np.concatenate(x_dft, y_dft, z_dft)
+    mlp_force = np.concatenate(x_dft, y_dft, z_dft)
+    return dft_force, mlp_force
+
