@@ -1,6 +1,5 @@
 from ase.io import read
 import copy
-from mp_api.client import MPRester
 import numpy as np
 import shutil
 import subprocess
@@ -9,7 +8,6 @@ import pandas as pd
 import re
 import yaml
 import pickle
-import
 import torch
 
 
@@ -19,17 +17,11 @@ def get_device(return_device = True):
         return device
     return
 
-def get_mpr():
-    mpr = MPRester(api_key = os.environ['API_KEY'], use_document_model=False)
-    return mpr
-
-def set_env(task,pbe, prefix='.gk'):
-    os.environ['API_KEY'] = 'tUCZf2SGk3XSAc8Jpqb12c3Q8Ve8230O'
-    os.environ['HOME'] = os.path.join('/home/jinvk', prefix)
+def set_env(task):
+    os.environ['HOME'] = os.path.join('/home/jinvk',task)
     os.environ['DNJF'] = os.path.join(os.environ['HOME'],'DNJF')
     os.environ['BARK'] = os.path.join(os.environ['HOME'], 'BARK')
-    os.environ['TASK'] =make_dir(os.path.join(os.environ['HOME'], task, str(pbe)),return_path=True)
-    os.environ['DFT'] = make_dir(os.path.join(os.environ['TASK'], 'dft'), return_path=True)
+    os.environ['TASK'] =make_dir(os.path.join(os.environ['HOME'], task),return_path=True)
     os.environ['OUT'] = make_dir(os.path.join(os.environ['TASK'], 'out'), return_path=True)
     os.environ['PLOT'] = make_dir(os.path.join(os.environ['OUT'], 'plot'), return_path=True)
     os.environ['LOG']=make_dir(os.path.join(os.environ['OUT'],'log'), return_path=True)
@@ -37,10 +29,8 @@ def set_env(task,pbe, prefix='.gk'):
     os.environ['TRAJ']=make_dir(os.path.join(os.environ['OUT'],'traj'), return_path=True)
 
     os.environ['RUN'] = make_dir(os.path.join(os.environ['TASK'],'run'), return_path=True)
-    os.environ['PBE'] = str(pbe)
-    os.environ['POTPAW'] = os.path.join(os.environ['DNJF'],'potpaw',str(pbe))
     os.environ['MLP'] = os.path.join(os.environ['BARK'], 'mlp')
-    os.environ['CONF'] = os.path.join(os.environ['DNJF'],'config',task)
+    os.environ['CONF'] = os.path.join(os.environ['BARK'],'TM23',task)
     os.environ['JOB'] = os.path.join(os.environ['BARK'], 'jobs')
     os.environ['MLPS'] = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4']
     os.environ['SYSTEMS'] = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr']
@@ -69,5 +59,4 @@ def load_dict(path):
     with open(path, 'rb') as f:
         loaded_data = pickle.load(f)
     return loaded_data
-
 

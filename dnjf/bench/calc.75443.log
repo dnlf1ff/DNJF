@@ -1,0 +1,12 @@
+GPU 1 assigned to the job
+SLURM_NTASKS: 1
+Traceback (most recent call last):
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/bench.py", line 65, in <module>
+    set_env(task='bench')
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/util.py", line 35, in set_env
+    os.environ['MLPS'] = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4']
+  File "/usr/lib64/python3.10/os.py", line 684, in __setitem__
+    value = self.encodevalue(value)
+  File "/usr/lib64/python3.10/os.py", line 756, in encode
+    raise TypeError("str expected, not %s" % type(value).__name__)
+TypeError: str expected, not list

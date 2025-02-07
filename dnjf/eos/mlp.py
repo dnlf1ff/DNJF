@@ -97,7 +97,7 @@ def run_eos(system, mlp, device,x=0.157, num_points=15, logger=logger):
     
     return out.assign(**{f'pe-{mlp}': sys_pes, f'vol-{mlp}': sys_vols, f'force-{mlp}': sys_forces, f'stress-{mlp}': sys_stress_s})
  
-def pray(mlp):
+ def pray():
     device = get_device()
     systems = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr']
     for system in systems:
@@ -113,5 +113,24 @@ def pray(mlp):
         gc.collect()
     return
 
+
+def pray_till_you_get_it(re=False):
+    device = get_device()
+    systems = os.environ['SYSTEMS']
+    mlps = os.environ['MLPS'][2:]
+    for mlp in mlps:
+    for system in systems:
+        logger = get_logger(system=system, logfile=f'{system}.upper().{mlp}.log', job= 'mlp')
+        logger.info(f"DEVICE: {device}")
+        if not os.path.exists(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')):
+            logger.info(f"collecting DFT results for {system}")
+            write_out(system)
+            get_vasp_result(system)
+        out = run_eos(system=system,mlp=mlp, device=device, logger=logger) 
+        save_dict(out, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
+        del out, logger
+        gc.collect()
+    return
+
 if __name__ == '__main__':
-    pray(mlp=sys.argv[1])
+    pray()

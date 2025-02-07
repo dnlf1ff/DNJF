@@ -1,0 +1,30 @@
+GPU 1 assigned to the job
+SLURM_NTASKS: 1
+Traceback (most recent call last):
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/bench.py", line 9, in <module>
+    from util import save_dict, set_env
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/util.py", line 24
+    os.environ['TASK'] =make_dir(os.path.join(os.environ['HOME'], task,return_path=True)
+                                ^
+SyntaxError: '(' was never closed
+Traceback (most recent call last):
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/bench.py", line 9, in <module>
+    from util import save_dict, set_env
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/util.py", line 24
+    os.environ['TASK'] =make_dir(os.path.join(os.environ['HOME'], task,return_path=True)
+                                ^
+SyntaxError: '(' was never closed
+Traceback (most recent call last):
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/bench.py", line 9, in <module>
+    from util import save_dict, set_env
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/util.py", line 24
+    os.environ['TASK'] =make_dir(os.path.join(os.environ['HOME'], task,return_path=True)
+                                ^
+SyntaxError: '(' was never closed
+Traceback (most recent call last):
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/bench.py", line 9, in <module>
+    from util import save_dict, set_env
+  File "/home/jinvk/.dlfjs/DNJF/dnjf/bench/util.py", line 24
+    os.environ['TASK'] =make_dir(os.path.join(os.environ['HOME'], task,return_path=True)
+                                ^
+SyntaxError: '(' was never closed

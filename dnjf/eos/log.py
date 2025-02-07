@@ -1,6 +1,7 @@
 from loguru import logger
 import sys
 import os
+from util import make_dir
 
 class LogCapture:
     def __init__(self, prefix=""):
@@ -31,8 +32,7 @@ def get_logger(system, logfile, job):
     if logfile is None:
         logfile = 'dnjf.log'
     
-    path = os.path.join(os.environ['LOG'], job)
-    os.makedirs(path, exist_ok=True)
+    path = make_dir(os.path.join(os.environ['LOG'], job))
     log_filename=os.path.join(path, logfile)
     logger.remove()
     logger.add(sys.stdout, level="INFO")
