@@ -99,7 +99,7 @@ def pray_till_you_get_it(pbe, re=False):
     mlps = ['omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4']
     # mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4']
     # systems = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr'] # 52, l3i5 from Cs
-    systems = ['Ag','Au','Cd','Co','Cs','Cu','Fe'] # 52, l3i5 from Cs
+    systems = ['Ta','Ti','V','W','Zn','Zr'] # 52, l3i5 from Cs
     for mlp in mlps:
         for system in systems:
             logger = get_logger(system=system, logfile=f'{system}.upper().{mlp}.log', job= 'mlp')
