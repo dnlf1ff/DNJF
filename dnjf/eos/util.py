@@ -59,12 +59,62 @@ def check_py():
 
 
 def save_dict(data, path):
+    path = os.path.join(os.environ['JAR'],f'{path}.pkl')
     with open(path, 'wb') as f:
         pickle.dump(data, f)
 
 def load_dict(path):
+    path = os.path.join(os.environ['JAR'],f'{path}.pkl')
     with open(path, 'rb') as f:
         loaded_data = pickle.load(f)
     return loaded_data
 
+def get_mlps(pickle_jar):
+    mlps = []
+    for column in pickle_jar.columns:
+        if 'force' in column and column.split('-')[1] not in mlps:
+            mlps.append(column.split('-')[1])
+    return mlps
 
+def get_tot_mlps():
+    ag_out = load_dict('Ag_mlp')
+    mlps_tot = get_mlps(ag_out)
+    # print(f'total mlps .. {mlps_tot}')
+    return mlps_tot
+
+def get_after_school_mlps(system):
+    mlps_tot = get_tot_mlps()
+    sys_out = load_dict(f'{system}_mlp')
+    sys_out = get_mlps(sys_out)
+    sys_left = list(set(mlps_tot)^set(sys_out))
+    # print(f'{system} needs afterschool calculation for {sys_left}')
+    return sys_left
+
+def get_systems_mlps(systems):
+    todos = {}
+    for system in systems:
+        sys_left = get_after_school_mlps(system)
+        todos[system] = sys_left
+    return todos
+
+def group_systems(systems):
+    todos = get_systems_mlps(systems)
+    neglected_mlps = []
+    todo = {} 
+    for system, mlps in todos.items():
+        if mlps not in neglected_mlps:
+            neglected_mlps.append(mlps)
+    for i, mlps in enumerate(neglected_mlps):
+        todo[chr(i+65)] = {}
+        todo[chr(i+65)]['systems'] = list([])
+        todo[chr(i+65)]['mlps'] = mlps
+    for system, mlps in todos.items():
+        for c in todo:
+            if mlps == todo[c]['mlps']:
+                todo[c]['systems'].append(system) 
+    return todo
+
+def tot_sys_mlps():
+    mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp'] 
+    systems = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','K','Li','Mg','Mo','Nb','Na','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr']
+    return mlps, systems

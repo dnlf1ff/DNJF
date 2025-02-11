@@ -75,7 +75,7 @@ def run_system(atoms, name, mlp):
 def run_mlps():
     set_env(task='bench')
     # mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4', 'omat_ft_r5', 'f5pp']
-    mlps = ['omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4', 'omat_ft_r5', 'f5pp']
+    mlps = ['omat_i3pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4', 'omat_ft_r5', 'f5pp']
     # mlps = ['omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4', 'omat_ft_r5', 'f5pp']
     # systems = ['Ag','Au','Cd','Co','Cr','Cu','Fe','Hf','Hg','Ir','Mn','Mo','Nb','Ni','Os','Pd','Pt','Re','Rh','Ru','Ta','Tc','Ti','V','W','Zr','Zn']
     systems = ['Ag','Au','Cd','Co','Cr','Cu','Fe','Hf']

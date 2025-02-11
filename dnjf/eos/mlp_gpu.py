@@ -10,12 +10,15 @@ from loguru import logger
 import numpy as np
 import os
 import pandas as pd
-
+import threading
 from vasp import write_out, get_vasp_result
-from util import load_dict, save_dict, get_device, set_env
+from util import load_dict, save_dict, get_device, set_env, group_systems, tot_sys_mlps
 from log import get_logger 
-
+import time
 kBar = 1602.1766208
+import multiprocessing
+from numba import jit
+from multiprocessing import Lock
 
 def set_mlp(atoms, mlp, device, logger):
     logger.log("DEBUG", "set mlp function")
@@ -35,6 +38,10 @@ def set_mlp(atoms, mlp, device, logger):
     atoms.calc = calculator
     return atoms
 
+@jit(nopython=True)
+def compute_stress(stress):
+    return -stress*kBar
+
 def run_mlp(system, atoms, mlp, device, logger, isif=3):
     logger.log("DEBUG", "run_mlp FUNC")
     atoms = set_mlp(atoms, mlp, device, logger)
@@ -50,7 +57,7 @@ def run_mlp(system, atoms, mlp, device, logger, isif=3):
     pe = atoms.get_potential_energy(force_consistent=True)/natoms
     vol = atoms.get_volume()/natoms
     force = atoms.get_forces()
-    stress = -atoms.get_stress()*kBar
+    stress = compute_stress(atoms.get_stress())
     logger.info(f"\n\nOUTPUT result for {calculation_type} of {system} with {mlp} - {natoms} {pe} {vol} {stress} {force}\n\n")
 
     return pe, vol, force, stress
@@ -68,15 +75,15 @@ def strain_vol(row, mlp, device, logger, num_points=15):
         forces.append(force)
         stresses.append(stress)
         
-    del atoms.calc
+    atoms.calc = None
     del atoms
     gc.collect()
 
     return np.asarray(pes), np.asarray(vols), np.asarray(forces), np.asarray(stresses)
 
-def run_eos(system, mlp, device, logger, num_points=15):
+def run_eos(system, mlp, device, num_points=15):
     logger.log("DEBUG", "run_eos FUNC")
-    out = load_dict(os.path.join(os.environ['JAR'], f'{system}_mlp.pkl'))
+    out = load_dict(f'{system}_mlp')
     sys_pes, sys_vols, sys_forces, sys_stresses = [], [], [], []
     for i, row in out.iterrows():
         pes, vols, forces, stresses = strain_vol(row, mlp, device, logger) 
@@ -89,29 +96,34 @@ def run_eos(system, mlp, device, logger, num_points=15):
     out[f'vol-{mlp}'] = sys_vols
     out[f'force-{mlp}'] = sys_forces
     out[f'stress-{mlp}'] = sys_stresses
-    save_dict(out, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
-    return out
+    save_dict(out, f'{system}_mlp')
 
-
-def pray_till_you_get_it(pbe, re=False):
-    set_env('eos', pbe)
+    
+def eos_mlps(pbe, systems = None, mlps = None, re=False):
     device = get_device()
-    mlps = ['omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4']
-    # mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','ompa_i5pp_epoch1','ompa_i5pp_epoch2','ompa_i5pp_epoch3','ompa_i5pp_epoch4']
-    # systems = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr'] # 52, l3i5 from Cs
-    systems = ['Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os']
+    if systems is None or mlps is None:
+        systems, mlps = tot_sys_mlps()
     for mlp in mlps:
         for system in systems:
-            logger = get_logger(system=system, logfile=f'{system}.upper().{mlp}.log', job= 'mlp')
             logger.info(f"DEVICE: {device}")
             #if not os.path.isfile(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')):
             #    logger.info(f"collecting DFT results for {system}")
             #    write_out(system)
             #    get_vasp_result(system)
-            out = run_eos(system,mlp, device, logger) 
-            save_dict(out, os.path.join(os.environ['JAR'],f'{system}_mlp.pkl'))
-            del out, logger
-            gc.collect()
+            run_eos(system, mlp, device)
+
+def get_neglected_out():
+    systems = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr']
+    out = group_systems(systems)
+    save_dict(out, 'neglected0')
+    return out
+
+def run_multi(pbe, group):
+   neg_out = load_dict('neglected.1') 
+   systems = neg_out[group]['systems']
+   mlps = neg_out[group]['mlps']
+   eos_mlps(pbe=pbe, systems=systems, mlps=mlps)
 
 if __name__ == '__main__':
-    pray_till_you_get_it(pbe=sys.argv[1])
+    set_env('eos',sys.argv[1])
+    run_multi(pbe=sys.argv[1],group=sys.argv[2])
