@@ -26,7 +26,13 @@ def get_calculator(mlp):
     return calculator
 
 def set_grace(mlp):
+    import tensorflow as tf
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+    tf.config.optimizer.set_jit(True)
     from tensorpotential.calculator import grace_fm 
+
     if 'oam' in mlp.lower():
         if '2l' in mlp.lower():
             calculator=grace_fm('GRACE_2L_OAM_28Jan25')
@@ -41,7 +47,7 @@ def set_grace(mlp):
          if 'r6' in mlp.lower():
              calculator=grace_fm('MP_GRACE_2L_r6_11Nov2024')
          else:
-             calculator=grace_fm('MP_GRACE_2L_r5_07Nov2024')
+             calculator=grace_fm('MP_GRACE_2L_r5_4Nov2024')
     return calculator
 
 def set_seven(mlp):
@@ -56,13 +62,14 @@ def set_matsim(mlp):
 
 def set_mace(mlp):
     from mace.calculators import mace_mp
-    mace_path=os.path.join(os.path.environ['MLP'],'mace')
+    mace_path=os.path.join(os.environ['MLP'],'mace')
     if 'omat' in mlp.lower():
         calculator=mace_mp(model=os.path.join(mace_path,'mace-omat-0-medium.model'), device=device.type)
     elif 'mpa' in mlp.lower():
         calculator=mace_mp(model=os.path.join(mace_path,'mace-mpa-0-medium.model'), device=device.type)
     else:
         calculator=mace_mp(model='medium',dispersion=False,default_dtype='float32',device=device.type)
+    return calculator
 
 @jit(nopython=True)
 def compute_stress(stress):
@@ -79,7 +86,6 @@ def run_mlp(system, atoms, isif=2):
     vol=atoms.get_volume()/natoms
     force=atoms.get_forces()
     stress=compute_stress(atoms.get_stress())
-    logger.debug(f"\n\nOUTPUT result for {calculation_type} of {system} with {mlp} - {natoms} {pe} {vol} {stress} {force}\n\n")
     return pe, vol, force, stress
 
 def strain_vol(row, calculator, num_points=15):
@@ -130,8 +136,9 @@ def eos_mlps(systems = None, mlps = None):
 def run_neglected(group='B'):
     neg_out = load_dict('neglected0')
     systems, mlps = neg_out[group]['systems'], neg_out[group]['mlps']
-    eos_mlps(systems=systems, mlps=mlps)
+    eos_mlps(systems=[systems[0]], mlps=mlps)
 
 if __name__ == '__main__':
     set_env('eos',sys.argv[1])
-    run_neglected()
+    systems, mlps=tot_sys_mlps(mlp=sys.argv[2])
+    eos_mlps(systems, mlps)
