@@ -1,139 +1,137 @@
-from ase.units import GPa
 from ase.io.trajectory import Trajectory
 from ase.io import read, write
-from ase.optimize import FIRE 
+from ase.optimize import FIRE, BFGS 
 from ase.filters import UnitCellFilter
-import sys
-import copy
-import gc
+import sys, copy, gc, os
 from loguru import logger
 import numpy as np
-import os
 import pandas as pd
-import threading
 from vasp import write_out, get_vasp_result
 from util import load_dict, save_dict, get_device, set_env, group_systems, tot_sys_mlps
-from log import get_logger 
-import time
-kBar = 1602.1766208
-import multiprocessing
 from numba import jit
-from multiprocessing import Lock
 
-def set_mlp(atoms, mlp, device, logger):
-    logger.log("DEBUG", "set mlp function")
+kBar = 1602.1766208
+device = get_device()
+
+def get_calculator(mlp):
     if 'mace' in mlp.lower():
-        from mace.calculators import mace_mp
-        calculator = mace_mp(model='medium', dispersion = False, default_dtype = 'float32', device='cpu')
-        logger.debug(f"MLP = {mlp}")
-    elif 'matsim' in mlp.lower() or 'matter' in mlp.lower():
-        from mattersim.forcefield import MatterSimCalculator
-        calculator = MatterSimCalculator(device=device)
-        logger.debug(f"MLP = {mlp}")
+        calculator=set_mace(mlp)
+    elif 'grace' in mlp.lower():
+        calculator=set_grace(mlp)
+    elif 'mat' in mlp.lower():
+        calculator=set_matsim(mlp)
     else:
-        from sevenn.calculator import SevenNetCalculator
-        mlp_path = os.path.join(os.environ['MLP'],mlp,'checkpoint_best.pth')
-        logger.debug(f"MLP = {mlp_path}")
-        calculator = SevenNetCalculator(model= mlp_path, device=device)
-    atoms.calc = calculator
-    return atoms
+        calculator=set_seven(mlp)
+    logger.debug(f"MLP={mlp}")
+    return calculator
+
+def set_grace(mlp):
+    from tensorpotential.calculator import grace_fm 
+    if 'oam' in mlp.lower():
+        if '2l' in mlp.lower():
+            calculator=grace_fm('GRACE_2L_OAM_28Jan25')
+        else:
+            calculator=grace_fm('GRACE-1L-OAM_2Feb25')
+    elif '1l' in mlp.lower():
+        if 'r6' in mlp.lower():
+            calculator=grace_fm('MP_GRACE_1L_r6_07Nov2024')
+        else:
+            calculator=grace_fm('MP_GRACE_1L_r6_4Nov2024')
+    elif '2l' in mlp.lower():
+         if 'r6' in mlp.lower():
+             calculator=grace_fm('MP_GRACE_2L_r6_11Nov2024')
+         else:
+             calculator=grace_fm('MP_GRACE_2L_r5_07Nov2024')
+    return calculator
+
+def set_seven(mlp):
+    from sevenn.calculator import SevenNetCalculator
+    calculator= SevenNetCalculator(model=os.path.join(os.environ['JAR'], mlp, 'checkpoint_best.pth'))
+    return calculator
+
+def set_matsim(mlp):
+    from mattersim.forcefield import MatterSimCalculator
+    calculator=MatterSimCalculator(device=device.type)
+    return calculator
+
+def set_mace(mlp):
+    from mace.calculators import mace_mp
+    mace_path=os.path.join(os.path.environ['MLP'],'mace')
+    if 'omat' in mlp.lower():
+        calculator=mace_mp(model=os.path.join(mace_path,'mace-omat-0-medium.model'), device=device.type)
+    elif 'mpa' in mlp.lower():
+        calculator=mace_mp(model=os.path.join(mace_path,'mace-mpa-0-medium.model'), device=device.type)
+    else:
+        calculator=mace_mp(model='medium',dispersion=False,default_dtype='float32',device=device.type)
 
 @jit(nopython=True)
 def compute_stress(stress):
     return -stress*kBar
 
-def run_mlp(system, atoms, mlp, device, logger, isif=3):
-    logger.log("DEBUG", "run_mlp FUNC")
-    atoms = set_mlp(atoms, mlp, device, logger)
-    calculation_type='relaxation'
-    if isif == 2:
-        filtered = UnitCellFilter(atoms, mask = [False]*6, constant_volume=True)
-        calculation_type='static calculation'
-    
-    optimizer = FIRE(filtered, logfile=os.path.join(os.environ['LOG'],'mlp',f'{system.lower()}.{mlp}.ase'))
+def run_mlp(system, atoms, isif=2):
+    logger.debug("run_mlp FUNC")
+    filtered=UnitCellFilter(atoms, mask=[0]*6, constant_volume=True)
+    calculation_type='static calculation'
+    optimizer=FIRE(filtered,logfile=os.path.join(os.environ['LOG'],'mlp',f'{system.lower()}.ase'))
     optimizer.run(fmax=0.00001)
-    
     natoms=len(atoms)
-    pe = atoms.get_potential_energy(force_consistent=True)/natoms
-    vol = atoms.get_volume()/natoms
-    force = atoms.get_forces()
-    stress = compute_stress(atoms.get_stress())
-    logger.info(f"\n\nOUTPUT result for {calculation_type} of {system} with {mlp} - {natoms} {pe} {vol} {stress} {force}\n\n")
-
+    pe=atoms.get_potential_energy()/natoms
+    vol=atoms.get_volume()/natoms
+    force=atoms.get_forces()
+    stress=compute_stress(atoms.get_stress())
+    logger.debug(f"\n\nOUTPUT result for {calculation_type} of {system} with {mlp} - {natoms} {pe} {vol} {stress} {force}\n\n")
     return pe, vol, force, stress
 
-def strain_vol(row, mlp, device, logger, num_points=15):
-    logger.log("DEBUG", "strain_vol FUNC")
+def strain_vol(row, calculator, num_points=15):
+    logger.debug("strain_vol FUNC")
     system=row['system']
     pes, vols, forces, stresses = [], [], [], []
     for i in np.arange(0,num_points,1):
-        logger.debug(f"STRAIN {i}th strain applied ...")
-        atoms = read(os.path.join(os.environ['DFT'],row['system'].lower(),row['bravais'],'strain',str(i),'POSCAR'), format='vasp')
-        pe, vol, force, stress = run_mlp(system, atoms, mlp, device, logger, isif=2)
+        logger.info(f"{row['system'].upper()} {i}th STRAIN applied ...")
+        atoms=read(os.path.join(os.environ['DFT'],row['system'].lower(),row['bravais'],'strain',str(i),'POSCAR'), format='vasp')
+        atoms.calc = calculator
+        pe, vol, force, stress = run_mlp(system, atoms)
         pes.append(pe)
         vols.append(vol)
         forces.append(force)
         stresses.append(stress)
-        
-    atoms.calc = None
     del atoms
     gc.collect()
-
     return np.asarray(pes), np.asarray(vols), np.asarray(forces), np.asarray(stresses)
 
-def run_eos(system, mlp, device, lock, num_points=15):
-    with lock:
-        logger.log("DEBUG", "run_eos FUNC")
-        out = load_dict(f'{system}_mlp')
-        sys_pes, sys_vols, sys_forces, sys_stresses = [], [], [], []
-        for i, row in out.iterrows():
-            pes, vols, forces, stresses = strain_vol(row, mlp, device, logger) 
-            sys_pes.append(pes)
-            sys_vols.append(vols)
-            sys_forces.append(forces)
-            sys_stresses.append(stresses)
-            logger.debug(f"ROW {i} - pe, vol, force, stress appended for strain: \n{sys_pes} {sys_vols} {sys_forces} {sys_stresses}")
-        out[f'pe-{mlp}'] = sys_pes
-        out[f'vol-{mlp}'] = sys_vols
-        out[f'force-{mlp}'] = sys_forces
-        out[f'stress-{mlp}'] = sys_stresses
-        save_dict(out, f'{system}_mlp')
-
+def run_eos(system, mlp, calculator, num_points=15):
+    logger.debug("run_eos FUNC")
+    out = load_dict(f'{system}_mlp')
+    sys_pes, sys_vols, sys_forces, sys_stresses = [], [], [], []
+    for i, row in out.iterrows():
+        pes, vols, forces, stresses = strain_vol(row, calculator) 
+        sys_pes.append(pes)
+        sys_vols.append(vols)
+        sys_forces.append(forces)
+        sys_stresses.append(stresses)
+        logger.debug(f"{system.upper()} ROW {i} - pe, vol, force, stress appended for strain: \n{sys_pes} {sys_vols} {sys_forces} {sys_stresses}")
+    out[f'pe-{mlp}']=sys_pes
+    out[f'vol-{mlp}']=sys_vols
+    out[f'force-{mlp}']=sys_forces
+    out[f'stress-{mlp}']=sys_stresses
+    save_dict(out, f'{system}_mlp')
     
-def eos_mlps(pbe, systems = None, mlps = None, re=False):
-
-    device = get_device()
+def eos_mlps(systems = None, mlps = None):
     if systems is None or mlps is None:
         systems, mlps = tot_sys_mlps()
-    # multiprocessing.set_start_method('spawn', force=True)
-    num_workers = 28
-    manager = multiprocessing.Manager()
-    lock = manager.Lock()
-
-    processes = []
+    logger.info(f"systems: {systems}, mlps: {mlps}")
     for mlp in mlps:
+        calculator=get_calculator(mlp)
         for system in systems:
-            logger.info(f"DEVICE: {device}")
-            #if not os.path.isfile(os.path.join(os.environ['JAR'],f'{system}_mlp.pkl')):
-            #    logger.info(f"collecting DFT results for {system}")
-            #    write_out(system)
-            #    get_vasp_result(system)
-            processes.append((system, mlp, device, lock))
-    with multiprocessing.Pool(processes=num_workers) as pool:
-        pool.starmap(run_eos, processes)
+            run_eos(system, mlp, calculator)
+        del calculator
+        gc.collect()
 
-def get_neglected_out():
-    systems = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','Ir','K','Li','Mg','Mo','Na','Nb','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr']
-    out = group_systems(systems)
-    save_dict(out, 'neglected.1')
-    return out
-
-def run_multi(pbe, group):
-   neg_out = load_dict('neglected0')
-   systems = neg_out[group]['systems']
-   mlps = neg_out[group]['mlps']
-   eos_mlps(pbe=pbe, systems=systems, mlps=mlps)
+def run_neglected(group='B'):
+    neg_out = load_dict('neglected0')
+    systems, mlps = neg_out[group]['systems'], neg_out[group]['mlps']
+    eos_mlps(systems=systems, mlps=mlps)
 
 if __name__ == '__main__':
     set_env('eos',sys.argv[1])
-    get_neglected_out()
+    run_neglected()

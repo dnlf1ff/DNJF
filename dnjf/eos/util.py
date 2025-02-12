@@ -114,7 +114,14 @@ def group_systems(systems):
                 todo[c]['systems'].append(system) 
     return todo
 
+def get_neglected():
+    systems, _ = tot_sys_mlps()
+    out = group_systems(systems)
+    save_dict(out, 'neglected0')
+    return out
+
+
 def tot_sys_mlps():
     mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp'] 
     systems = ['Ag','Al','Au','Ca','Cd','Co','Cs','Cu','Fe','Hf','K','Li','Mg','Mo','Nb','Na','Os','Pd','Pt','Rb','Re','Rh','Sr','Ta','Ti','V','W','Zn','Zr']
-    return mlps, systems
+    return systems, mlps
