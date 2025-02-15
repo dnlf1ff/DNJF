@@ -100,25 +100,15 @@ def group_systems(systems):
                     todo[c]['systems'].append(system)
     return todo
 
-def tot_sys_mlps():
-    mlps =  ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','m3g_n','m3g_r6','m3g_r55','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
-    systems = ['Ag','Au','Cd','Co','Cr','Cu','Fe','Hf','Hg','Ir','Mn','Mo','Nb','Ni','Os','Pd','Pt','Re','Rh','Ru','Ta','Tc','Ti','V','W','Zn','Zr']
+def tot_sys_mlps(mlp):
+    if 'mace' in mlp.lower():
+        mlps = ['mace-mpa-0','mace-omat-0']
+        # mlps = ['mace-mp-0','mace-mpa-0','mace-omat-0']
+    elif 'mat' in mlp.lower():
+        mlps = ['mattersim']
+    elif 'grace' in mlp.lower():
+        mlps = ['grace-2l-r5','grace-2l','grace-1l','grace-1l-oam','grace-2l-oam']
+    else:
+        mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp'] 
+    systems = ['Ag','Au','Co','Cu','Fe','Hf','Hg','Mn','Mo','Nb','Ni','Os','Pd','Pt','Re','Rh','Ru','Tc','Ti','V','W','Zn','Zr'] #Re, Ca, Sr
     return systems, mlps
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

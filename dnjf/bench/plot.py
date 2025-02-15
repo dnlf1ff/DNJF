@@ -14,7 +14,7 @@ def set_lim(dft_out, mlp_out):
     min_lim = min_val - val_range*0.3
     return np.linspace(min_lim, max_lim, 300)
 
-def scatter(out, prop, name, mlp): #TODO: group with elements
+def scatter(out, prop, system, mlp): #TODO: group with elements
     rcParams['font.family'] = 'Arial'
     fig, axs = plt.subplots(figsize=(6.5,6.5))
     if prop == 'force':
@@ -56,7 +56,7 @@ def scatter(out, prop, name, mlp): #TODO: group with elements
 
     fig.set_layout_engine('tight')
     
-    fig.savefig(os.path.join(os.environ['PLOT'],f'{name}.{mlp}.{prop}.png'))
+    fig.savefig(os.path.join(os.environ['PLOT'],f'{system}.{mlp}.{prop}.png'))
     plt.close(fig)
     del fig
     gc.collect()
