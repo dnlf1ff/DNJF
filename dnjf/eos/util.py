@@ -1,24 +1,16 @@
-from ase.io import read
-import copy
-from mp_api.client import MPRester
-import numpy as np
-import shutil
-import subprocess
 import os
-import pandas as pd
-import re
-import yaml
 import pickle
-import torch
 
 
 def get_device(return_device = True):
+    import torch
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if return_device:
         return device
     return
 
 def get_mpr():
+    from mp_api.client import MPRester
     mpr = MPRester(api_key = os.environ['API_KEY'], use_document_model=False)
     return mpr
 
@@ -49,6 +41,7 @@ def make_dir(path, return_path = True):
     return
   
 def load_conf():
+    import yaml
     conf = os.path.join(os.environ['CONF'],'inp.yaml')
     with open(conf, 'r') as inp:
         inp_yaml = yaml.safe_load(inp)
@@ -77,14 +70,14 @@ def get_mlps(pickle_jar):
     return mlps
 
 def get_tot_mlps():
-    ag_out = load_dict('Ag_mlp')
+    ag_out = load_dict('Ag')
     mlps_tot = get_mlps(ag_out)
     # print(f'total mlps .. {mlps_tot}')
     return mlps_tot
 
 def get_after_school_mlps(system):
     mlps_tot = get_tot_mlps()
-    sys_out = load_dict(f'{system}_mlp')
+    sys_out = load_dict(f'{system}')
     sys_out = get_mlps(sys_out)
     sys_left = list(set(mlps_tot)^set(sys_out))
     # print(f'{system} needs afterschool calculation for {sys_left}')
@@ -115,7 +108,7 @@ def group_systems(systems):
     return todo
 
 def get_neglected():
-    systems, _ = tot_sys_mlps()
+    systems, _ = tot_sys_mlps('adfs')
     out = group_systems(systems)
     save_dict(out, 'neglected0')
     return out
@@ -128,7 +121,13 @@ def tot_sys_mlps(mlp):
         mlps = ['mattersim']
     elif 'grace' in mlp.lower():
         mlps = ['grace-2l-r5','grace-2l','grace-1l','grace-1l-oam','grace-2l-oam']
+    elif 'tot' in mlp.lower():
+        mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp','grace-1l','grace-2l','grace-2l-r5','grace-1l-oam','grace-2l-oam','mace-mp-0','mace-mpa-0','mace-omat-0'] 
     else:
         mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp'] 
-    systems = ['Ag','Al','Au','Cd','Co','Cs','Cu','Fe','Hf','K','Li','Mg','Mo','Nb','Na','Os','Pd','Pt','Rb','Rh','Sr','Ta','Ti','V','W','Zn','Zr'] #Re, Ca, Sr
+    systems = ['Ag','Al','Au','Cd','Co','Cs','Cu','Fe','Hf','K','Li','Mg','Mo','Nb','Na','Os','Pd','Pt','Rb','Rh','Ta','Ti','V','W','Zn','Zr'] #Re, Ca
     return systems, mlps
+
+
+if __name__ == '__main__':
+    get_neglected()

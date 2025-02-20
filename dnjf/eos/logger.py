@@ -2,6 +2,18 @@ from loguru import logger
 import sys
 import os
 from util import make_dir
+import time
+
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class Logger(metaclass=Singleton):
+    SCREEN_WIDTH=120
 
 class LogCapture:
     def __init__(self, prefix=""):

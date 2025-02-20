@@ -7,11 +7,16 @@ from loguru import logger
 import numpy as np
 import pandas as pd
 from vasp import write_out, get_vasp_result
-from util import load_dict, save_dict, get_device, set_env, group_systems, tot_sys_mlps
+from util import load_dict, save_dict, get_device, set_env, group_systems, tot_sys_mlps, get_neglected
 from numba import jit
 
 kBar = 1602.1766208
-device = get_device()
+
+try:
+    device = get_device()
+except:
+    import tensorflow as tf    
+    device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/CPU:0"
 
 def get_calculator(mlp):
     if 'mace' in mlp.lower():
@@ -39,15 +44,15 @@ def set_grace(mlp):
         else:
             calculator=grace_fm('GRACE-1L-OAM_2Feb25')
     elif '1l' in mlp.lower():
-        if 'r6' in mlp.lower():
-            calculator=grace_fm('MP_GRACE_1L_r6_07Nov2024')
-        else:
+        if 'r5' in mlp.lower():
             calculator=grace_fm('MP_GRACE_1L_r6_4Nov2024')
+        else:
+            calculator=grace_fm('MP_GRACE_1L_r6_07Nov2024')
     elif '2l' in mlp.lower():
-         if 'r6' in mlp.lower():
-             calculator=grace_fm('MP_GRACE_2L_r6_11Nov2024')
-         else:
+         if 'r5' in mlp.lower():
              calculator=grace_fm('MP_GRACE_2L_r5_4Nov2024')
+         else:
+             calculator=grace_fm('MP_GRACE_2L_r6_11Nov2024')
     return calculator
 
 def set_seven(mlp):
@@ -107,7 +112,7 @@ def strain_vol(row, calculator, num_points=15):
 
 def run_eos(system, mlp, calculator, num_points=15):
     logger.debug("run_eos FUNC")
-    out = load_dict(f'{system}_mlp')
+    out = load_dict(f'{system}')
     sys_pes, sys_vols, sys_forces, sys_stresses = [], [], [], []
     for i, row in out.iterrows():
         pes, vols, forces, stresses = strain_vol(row, calculator) 
@@ -120,7 +125,7 @@ def run_eos(system, mlp, calculator, num_points=15):
     out[f'vol-{mlp}']=sys_vols
     out[f'force-{mlp}']=sys_forces
     out[f'stress-{mlp}']=sys_stresses
-    save_dict(out, f'{system}_mlp')
+    save_dict(out, f'{system}')
     
 def eos_mlps(systems = None, mlps = None):
     if systems is None or mlps is None:
@@ -140,5 +145,6 @@ def run_neglected(group='B'):
 
 if __name__ == '__main__':
     set_env('eos',sys.argv[1])
-    systems, mlps=tot_sys_mlps(mlp=sys.argv[2])
-    eos_mlps(systems, mlps)
+    # systems, _ =tot_sys_mlps('grace')
+    #mlps=[sys.argv[2]]
+    eos_mlps(['Sr'], ['mace-omat-0'])
