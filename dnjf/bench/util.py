@@ -1,17 +1,9 @@
-from ase.io import read
-import copy
-import numpy as np
-import shutil
-import subprocess
 import os
-import pandas as pd
-import re
-import yaml
 import pickle
-import torch
 
 
 def get_device(return_device = True):
+    import torch
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if return_device:
         return device
@@ -38,16 +30,24 @@ def make_dir(path, return_path = True):
     if return_path:
         return path
     return
-  
+
+
 def load_conf():
+    import yaml
     conf = os.path.join(os.environ['CONF'],'inp.yaml')
     with open(conf, 'r') as inp:
         inp_yaml = yaml.safe_load(inp)
         return inp_yaml
 
-def check_py():
-    print(f"Using Python executable: {sys.executable}")
+def load_csv(path):
+    import pandas as pd
+    path = os.path.join(os.environ['JAR'], f'{path}.csv')
+    data = pd.read_csv(path)
+    return data
 
+def save_csv(data, path):
+    path = os.path.join(os.environ['JAR'], f'{path}.csv')
+    data.to_csv(path, index=False)
 
 def save_dict(data, path):
     path = os.path.join(os.environ['JAR'], f'{path}.pkl')
@@ -59,6 +59,20 @@ def load_dict(path):
     with open(path, 'rb') as f:
         loaded_data = pickle.load(f)
     return loaded_data
+
+def dishwash(system):
+    print(system)
+    jar=load_dict(system)
+    pckls = []
+    print(jar)
+    for column in jar.columns:
+        if 'epoch4' in column:
+            pckls.append(column.split('_e')[0])
+    print(pckls)
+    for column in pckls:
+        jar[column] = jar[column+'_epoch4']
+    save_dict(jar, system)
+    return jar
 
 def get_mlps(pickle_jar):
     mlps = []
@@ -100,7 +114,7 @@ def group_systems(systems):
                     todo[c]['systems'].append(system)
     return todo
 
-def tot_sys_mlps(mlp):
+def tot_sys_mlps(mlp='tot'):
     if 'mace' in mlp.lower():
         mlps = ['mace-mpa-0','mace-omat-0']
         # mlps = ['mace-mp-0','mace-mpa-0','mace-omat-0']
@@ -108,7 +122,11 @@ def tot_sys_mlps(mlp):
         mlps = ['mattersim']
     elif 'grace' in mlp.lower():
         mlps = ['grace-2l-r5','grace-2l','grace-1l','grace-1l-oam','grace-2l-oam']
+    elif 'tot' in mlp.lower():
+        mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch3','omat_epoch4','omat', 'omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5pp','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i5','omat_i3pp','mace-mp-0','mace-mpa-0','mace-omat-0','mattersim']
     else:
-        mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp'] 
-    systems = ['Ag','Au','Co','Cu','Fe','Hf','Hg','Mn','Mo','Nb','Ni','Os','Pd','Pt','Re','Rh','Ru','Tc','Ti','V','W','Zn','Zr'] #Re, Ca, Sr
+        mlps = ['chgTot','chgTot_l3i3','chgTot_l3i5','chgTot_l4i3','omat_epoch1','omat_epoch2','omat_epoch4','omat_ft_r5','r5pp','omat_i5pp_epoch1','omat_i5pp_epoch2','omat_i5pp_epoch3','omat_i5pp_epoch4','omat_i5_epoch1','omat_i5_epoch2','omat_i5_epoch3','omat_i5_epoch4','omat_i3pp']
+
+    systems = ['Ag','Au','Co','Cu','Fe','Hf','Hg','Mn','Mo','Nb','Ni','Os','Pd','Pt','Re','Rh','Ru','Tc','Ti','V','W','Zn']
+
     return systems, mlps

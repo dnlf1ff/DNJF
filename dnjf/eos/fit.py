@@ -4,7 +4,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from loguru import logger
 from util import load_dict, save_dict, tot_sys_mlps, set_env, load_conf
-from plot import eos_plot
+from plotter import eos_plot, _scatter
 import sys
 import numpy as np
 import gc
@@ -87,22 +87,26 @@ def fit_main():
         gc.collect()
 
 
-def scatter_mlps(system, mlps, conf=None, out=None):
-    if conf is None:
-        conf = load_conf()
+def scatter_mlps(system, mlps, out=None):
     if out is None:
         out = load_dict(f'{system}')
+    props = ['pe','stress','force','vol']
     for mlp in mlps:
-        for i, row in out.iterrows():
-            plt.scatter(row[f'vol-{mlp}'], row[f'pe-{mlp}'], label=mlp)
-        plt.xlabel('Volume (A³/atom)')
-        plt.ylabel('Potential Energy (eV/atom)')
-        plt.title(f'{system} {mlp} Scatter')
-        plt.legend()
-        plt.show()
+        for prop in props:
+            _scatter(system, out, mlp, prop)
+    del mlp, prop, out
     return
 
 
+def scatter_main():
+    systems, mlps = tot_sys_mlps('tot')
+    for system in systems:
+        out = load_dict(f'bak/{system}')
+        scatter_mlps(system, mlps, out=out)
+        del out
+        gc.collect()
+    return
+
 if __name__ == '__main__':
     set_env('eos',sys.argv[1])
-    fit_main()
+    scatter_main()

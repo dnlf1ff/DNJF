@@ -12,7 +12,7 @@ kBar=1602.1766208
 try:
     device = get_device()
 except:
-    import tensorflow as tf    
+    import tensorflow as tf
     device = "/GPU:0" if tf.config.list_physical_devices('GPU') else "/CPU:0"
 
 def get_calculator(mlp):
@@ -28,10 +28,10 @@ def get_calculator(mlp):
     return calculator
 
 def set_grace(mlp):
-    import tensorflow as tf
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    for gpu in gpus:
-        tf.config.experimental.set_memory_growth(gpu, True)
+    # import tensorflow as tf
+    # gpus = tf.config.experimental.list_physical_devices('GPU')
+    # for gpu in gpus:
+    #    tf.config.experimental.set_memory_growth(gpu, True)
     tf.config.optimizer.set_jit(True)
     from tensorpotential.calculator import grace_fm 
 
@@ -41,15 +41,16 @@ def set_grace(mlp):
         else:
             calculator=grace_fm('GRACE-1L-OAM_2Feb25')
     elif '1l' in mlp.lower():
-        if 'r6' in mlp.lower():
+        if 'r5' in mlp.lower():
             calculator=grace_fm('MP_GRACE_1L_r6_07Nov2024')
         else:
             calculator=grace_fm('MP_GRACE_1L_r6_4Nov2024')
     elif '2l' in mlp.lower():
-         if 'r6' in mlp.lower():
-             calculator=grace_fm('MP_GRACE_2L_r6_11Nov2024')
-         else:
+         if 'r5' in mlp.lower():
              calculator=grace_fm('MP_GRACE_2L_r5_4Nov2024')
+         else:
+             calculator=grace_fm('MP_GRACE_2L_r6_11Nov2024')
+    logger.info(f'calculator: {calculator}')
     return calculator
 
 def set_seven(mlp):
@@ -125,7 +126,7 @@ def run_system(system, atoms, calculator,mlp, parity=True):
     out[f'vol-{mlp}'] = vols
     out[f'force-{mlp}'] = forces
     out[f'stress-{mlp}'] = stresses
-    save_dict(out, f'{system}_mlp')
+    save_dict(out, f'{system}_{mlp}')
     if parity:
         props = ['pe','force','stress']
         for prop in props: 
@@ -147,7 +148,7 @@ def run_mlps(systems, mlps):
 
 def get_neglected_out():
     set_env('bench')
-    systems, _ = tot_sys_mlps()
+    systems, _ = tot_sys_mlps('svn')
     out = group_systems(systems)
     save_dict(out, 'neglected.1')
 
@@ -160,5 +161,6 @@ def run_neglected(group):
 
 
 if __name__ == '__main__':
-    systems, mlps = tot_sys_mlps(mlp = sys.argv[1])
+    systems, _ = tot_sys_mlps(mlp = 'grace')
+    mlps = ['grace-2l']
     run_mlps(systems, mlps)

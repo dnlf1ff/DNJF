@@ -34,6 +34,7 @@ def run_mlp(atoms, name, mlp):
     gc.collect()
     return pes, vols, forces, stresses
 
+
 def run_vasp(atoms, name):
     print(f'running {name}')
     nions, pes, vols, forces, stresses = [], [], [], [], []
